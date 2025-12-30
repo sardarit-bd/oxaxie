@@ -18,7 +18,7 @@ const Navbar = () => {
             <a href="#how-it-works" className="hover:text-gray-100 text-sm">
               How It Works
             </a>
-            <a href="#pricing" className="hover:text-gray-100 text-sm">
+            <a href="/pricing" className="hover:text-gray-100 text-sm">
               Pricing
             </a>
           </div>

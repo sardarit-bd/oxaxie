@@ -17,8 +17,8 @@ export default function LoginPage() {
     
   return (
     <main className="min-h-screen flex">
-      <div className="w-full lg:w-1/2 bg-[#FBFAF9] flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
+      <div className="w-full lg:w-1/2 bg-[#FBFAF9] flex items-start sm:items-center justify-center p-6 pt-4 sm:p-8">
+        <div className="w-full max-w-[340px] sm:max-w-md mx-auto">
           {/* Back to home link */}
           <Link href="/">
           <button className="flex items-center gap-2 text-[#666] text-sm mb-12 hover:text-[#333] transition-colors">
