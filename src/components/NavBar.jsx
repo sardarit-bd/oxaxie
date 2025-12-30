@@ -1,5 +1,6 @@
 import { Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 const Navbar = () => {
   return (
@@ -9,7 +10,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center gap-2">
             <Scale className="h-6 w-6 text-foreground text-white" />
-            <span className="text-lg text-white text-foreground">Advocate</span>
+            <span className="text-xl tracking-tight font-serif text-white">Advocate</span>
           </div>
 
           {/* Navigation Links */}
@@ -23,9 +24,11 @@ const Navbar = () => {
           </div>
 
           {/* CTA Button */}
-          <Button variant="outline" size="sm" className="bg-[#FFAF0B] text-gray-800 hover:bg-FFB417 font-semibold px-2.5 py-3 border-none rounded rounded-lg cursor-pointer">
+          <Link href="/login">
+            <Button variant="outline" size="sm" className="bg-[#FFAF0B] text-gray-800 hover:bg-FFB417 font-semibold px-2.5 py-3 border-none rounded rounded-lg cursor-pointer">
             Get Started
           </Button>
+          </Link>
         </div>
       </div>
     </nav>

@@ -33,14 +33,14 @@ const steps = [
 const HowItWorks = () => {
   return (
     <section id="how-it-works" className="py-24 bg-[#F7F6F4]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
         <div className="max-w-3xl mx-auto text-center mb-16">
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-foreground mb-4">
             How <span className="italic font-serif">Advocate</span> Works
           </h2>
-          <p className="text-lg text-gray-500 font-sans">
+          <p className="text-[#64748B] text-[16.5px] leading-[1.6] font-inter">
             Get from confusion to clarity in four simple steps
           </p>
         </div>
@@ -58,7 +58,7 @@ const HowItWorks = () => {
               >
                 {/* Connecting Line (Desktop Only) */}
                 {index < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-12 left-[70%] w-[60%] h-px bg-gray-200 z-0" />
+                  <div className="hidden lg:block absolute top-12 left-[60%] w-[51%] h-px bg-gray-200 z-20" />
                 )}
 
                 {/* Card Container */}
@@ -80,9 +80,9 @@ const HowItWorks = () => {
                   <h3 className="font-serif text-xl text-foreground mb-3">
                     {step.title}
                   </h3>
-                  <p className="text-muted-foreground text-sm leading-relaxed font-sans">
-                    {step.description}
-                  </p>
+                  <p className="text-[#64748B] text-[13.5px] leading-[1.6] font-inter">
+                      {step.description}
+                    </p>
                 </div>
               </div>
             );

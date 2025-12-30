@@ -3,10 +3,9 @@ import { Button } from "@/components/ui/button";
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-16 overflow-hidden bg-[#27334C]">
+    <section className="relative min-h-screen flex items-center justify-center pt-8 overflow-hidden bg-[#27334C]">
       
       {/* --- BACKGROUND PATTERN LAYER --- */}
-      {/* This container handles the 5% opacity from your example */}
       <div className="absolute inset-0 opacity-12">
         <div 
           className="absolute inset-0 scale-110" 
@@ -19,20 +18,19 @@ const Hero = () => {
       </div>
 
       {/* --- GRADIENT OVERLAYS --- */}
-      {/* Bottom fade to match your code example */}
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-[#27334C] to-transparent z-[1]" />
 
       {/* --- CONTENT LAYER --- */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-4xl mx-auto text-center pb-20 pt-0">
+        <div className="max-w-4xl mx-auto text-center pb-20 pt-8 sm:pt-0">
           
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white/90 text-sm font-medium mb-8 backdrop-blur-sm">
+          {/* Badge - Hidden on mobile, flex on sm+ */}
+          <div className="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-white/90 text-sm font-medium mb-8 backdrop-blur-sm">
             <Shield className="w-4 h-4 font-semibold" />
             <span>AI-Powered Legal Guidance</span>
           </div>
 
-          {/* Main Heading */}
+          {/* Main Heading - Now at the top on mobile */}
           <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white leading-tight mb-6">
             Know Your Rights. <span className="italic">Take Action.</span>
           </h1>
@@ -44,18 +42,20 @@ const Hero = () => {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <button className="inline-flex items-center justify-center gap-2 bg-[#FFAF0B] text-black font-semibold hover:brightness-110 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg shadow-[0_0_20px_rgba(255,175,11,0.3)] cursor-pointer">
+            {/* First Button: w-fit ensures it only expands to fit the text + padding */}
+            <button className="w-fit sm:w-auto inline-flex items-center justify-center gap-2 bg-[#FFAF0B] text-black font-semibold hover:brightness-110 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg shadow-[0_0_20px_rgba(255,175,11,0.3)] cursor-pointer">
               Get Legal Guidance
               <ArrowRight className="w-5 h-5" />
             </button>
             
-            <button className="inline-flex items-center justify-center gap-2 border-2 border-white/30 text-white bg-transparent hover:bg-white/10 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg cursor-pointer">
+            {/* Second Button: w-fit allows it to be a different size than the first one */}
+            <button className="w-fit sm:w-auto inline-flex items-center justify-center gap-2 border-2 border-white/30 text-white bg-transparent hover:bg-white/10 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg cursor-pointer">
               How It Works
             </button>
           </div>
 
           {/* Feature Pills */}
-          <div className="flex flex-wrap items-center justify-center gap-8 text-white/60 text-sm">
+          <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 text-white/60 text-sm">
             <div className="flex items-center gap-2">
               <Scale className="w-4 h-4" />
               <span>Multi-jurisdiction support</span>
@@ -71,7 +71,7 @@ const Hero = () => {
           </div>
         </div>
       </div>
-      {/* This makes the bottom 100% white, fading to transparent as it goes up */}
+
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent z-[5] pointer-events-none"></div>
     </section>
   );

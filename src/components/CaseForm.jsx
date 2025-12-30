@@ -1,8 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Home, Briefcase, FileText, ShoppingBag, Users, HelpCircle, Upload, MapPin, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState } from 'react';
+import { 
+  Home, 
+  Briefcase, 
+  FileText, 
+  ShoppingBag, 
+  Users, 
+  HelpCircle, 
+  Upload, 
+  MapPin, 
+  ArrowRight,
+  MessageSquare,
+  X
+} from "lucide-react";
 
 const issueTypes = [
   { id: "landlord", icon: Home, label: "Landlord/Tenant", description: "Leases, deposits, evictions" },
@@ -18,6 +29,23 @@ const CaseForm = () => {
   const [location, setLocation] = useState("");
   const [situation, setSituation] = useState("");
 
+  const [files, setFiles] = useState([]);
+
+  const handleFileChange = (e) => {
+    const newFiles = Array.from(e.target.files).map(file => ({
+      name: file.name,
+      size: (file.size / 1024).toFixed(0) + ' KB',
+      id: Math.random().toString(36).substr(2, 9)
+    }));
+    setFiles([...files, ...newFiles]);
+  };
+
+  const removeFile = (id) => {
+    setFiles(files.filter(f => f.id !== id));
+  };
+
+  const hasFiles = files.length > 0;
+
   return (
     <section className="py-24 bg-[#FBFAF9]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,7 +55,7 @@ const CaseForm = () => {
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-foreground mb-4">
             Tell Us What's <span className="italic">Happening</span>
           </h2>
-          <p className="text-lg text-gray-500">
+          <p className="text-[18px] text-gray-600/80 font-inter">
             Share the details of your situation and we'll provide personalized guidance
           </p>
         </div>
@@ -38,7 +66,7 @@ const CaseForm = () => {
           {/* Step 1: Issue Type */}
           <div className="space-y-4">
             <label className="text-sm font-medium text-foreground flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-semibold">
+              <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
                 1
               </span>
               What type of issue are you facing?
@@ -47,15 +75,19 @@ const CaseForm = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {issueTypes.map((issue) => {
                 const Icon = issue.icon;
+                const isSelected = selectedIssue === issue.id;
                 return (
                   <button
                     key={issue.id}
+                    onClick={() => setSelectedIssue(issue.id)}
                     type="button"
-                    className="p-4 rounded-xl border-2 text-left transition-all duration-200 hover:shadow-sm border-border hover:border-accent/50 group"
+                    className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:border-yellow-500/80 cursor-pointer group ${
+                      isSelected ? 'border-2 border-[#F59F0A] bg-[#FAF5ED]' : 'border-2 border-gray-300/70 hover:border-gray-200'
+                    }`}
                   >
-                    <Icon className="w-5 h-5 mb-2 text-muted-foreground group-hover:text-foreground transition-colors" />
-                    <div className="font-medium text-foreground text-sm">{issue.label}</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">{issue.description}</div>
+                    <Icon className={`w-5 h-5 mb-2 transition-colors ${isSelected ? 'text-[#F59F0A]' : 'text-gray-500 group-hover:text-gray-500'}`} />
+                    <div className="text-[12.5px] font-[560] text-slate-800">{issue.label}</div>
+                    <div className="text-xs text-gray-500 mt-0.5">{issue.description}</div>
                   </button>
                 );
               })}
@@ -65,7 +97,7 @@ const CaseForm = () => {
           {/* Step 2: Location */}
           <div className="space-y-4">
             <label className="text-sm font-medium text-foreground flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center font-semibold">
+              <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
                 2
               </span>
               Where are you located?
@@ -74,23 +106,124 @@ const CaseForm = () => {
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
                 placeholder="City, State/Province, Country"
-                className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-border bg-background text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-0 transition-colors"
+                className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-gray-300/70 text-foreground placeholder:text-muted-foreground focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors"
               />
             </div>
-            <p className="text-xs text-muted-foreground">This helps us provide jurisdiction-specific legal guidance</p>
+            <p className="text-xs text-gray-500">This helps us provide jurisdiction-specific legal guidance</p>
           </div>
 
-          {/* Submit Button (Customized) */}
-          <div className="pt-4">
-            <button className="inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-200 bg-accent text-accent-foreground font-medium hover:brightness-105 active:scale-[0.98] h-14 rounded-xl px-10 text-lg w-full">
-              Get Legal Guidance
-              <ArrowRight className="w-5 h-5" />
-            </button>
-            <p className="text-xs text-muted-foreground text-center mt-4">
-              Your information is encrypted and never shared. This is not legal advice — it's educational guidance to help you understand your options.
-            </p>
+          {/* Step 3: Describe Situation */}
+          <div className="space-y-4">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
+                3
+              </span>
+              Describe your situation
+            </label>
+            <div className="relative">
+              <textarea
+                value={situation}
+                onChange={(e) => setSituation(e.target.value)}
+                rows={5}
+                placeholder="Tell us what happened in your own words. Include relevant dates, people involved, what was said or done, and what outcome you're hoping for..."
+                className="w-full px-4 py-4 rounded-xl border-2 border-gray-300/70 text-foreground placeholder:text-muted-foreground focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors resize-none"
+              />
+            </div>
+            <p className="text-xs text-gray-500">The more detail you provide, the better guidance we can give</p>
           </div>
+
+          {/* Step 4: Upload Documents */}
+         <div className="space-y-4">
+        <label className="text-sm font-medium text-foreground flex items-center gap-2">
+          <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
+            4
+          </span>
+          Upload relevant documents (optional)
+        </label>
+        
+        <div className="relative border-2 border-dashed border-gray-300/70 rounded-xl p-8 transition-all hover:border-[#F7BB57]/60 group cursor-pointer text-center bg-gray-50/30">
+          <input
+            type="file"
+            multiple
+            onChange={handleFileChange}
+            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+          />
+          <div className="flex flex-col items-center">
+            <div className="w-12 h-12 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <Upload className="w-8 h-8 text-gray-400" />
+            </div>
+            <div className="font-semibold text-black leading-tight">Drop files here or click to upload</div>
+            <div className="text-[11px] text-gray-500 mt-1.5">
+              Contracts, leases, notices, correspondence, photos
+            </div>
+          </div>
+        </div>
+
+        {/* Uploaded Files List */}
+        <div className="space-y-2">
+          {files.map((file) => (
+            <div 
+              key={file.id} 
+              className="flex items-center gap-3 p-3 bg-[#F5F3F1] rounded-lg border border-gray-200/50"
+            >
+              <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <span className="text-sm text-slate-800 truncate flex-1 font-medium">{file.name}</span>
+              <span className="text-[12px] text-gray-400 uppercase">{file.size}</span>
+              <button 
+                onClick={() => removeFile(file.id)}
+                type="button" 
+                className="p-1 transition-colors hover:bg-gray-200/40 rounded cursor-pointer"
+              >
+                <X className="w-4 h-4 text-gray-400" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Action Button */}
+      <button 
+        className={`
+          relative inline-flex items-center justify-center gap-2
+          whitespace-nowrap transition-all duration-300
+          
+          /* Background */
+          bg-[#F7BB57] h-[58px] px-8 rounded-[14px] w-full
+          border-t border-white/25
+          
+          /* Shadow Logic */
+          ${hasFiles 
+            ? 'shadow-[0_8px_25px_-5px_rgba(247,187,87,0.5)]' 
+            : 'shadow-md brightness-[0.98]'}
+          
+          /* TEXT COLOR LOGIC: black/40 default, black when files exist */
+          ${hasFiles ? 'text-black' : 'text-black/40'}
+          
+          /* Typography & Interaction */
+          font-bold text-[17px] tracking-tight antialiased
+          ${hasFiles ? 'hover:brightness-[1.03] active:scale-[0.98] cursor-pointer' : 'cursor-default'}
+        `}
+        style={{
+          fontFamily: "'Google Sans', 'Outfit', sans-serif", marginBottom: '0px'
+        }}
+      >
+        <span className="relative z-10">Get Legal Guidance</span>
+        
+        {/* ARROW COLOR LOGIC: black/40 default, black when files exist */}
+        <ArrowRight 
+          className={`
+            w-5 h-5 stroke-[2.5px] transition-colors duration-300 relative z-10
+            ${hasFiles ? 'text-black' : 'text-black/40'}
+          `} 
+        />
+        
+        {/* Glossy top overlay */}
+        <div className="absolute inset-0 rounded-[14px] bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
+      </button>
+      <p className='text-xs text-gray-500/80 text-center pt-4'>Your information is encrypted and never shared. This is not legal advice — it's educational guidance to help you understand your options.</p>
         </div>
       </div>
     </section>

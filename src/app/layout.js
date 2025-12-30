@@ -23,8 +23,8 @@ const inter = Inter({
 });
 
 export const metadata = {
-  title: "QKey - Your Gateway to Digital Solutions",
-  description: "Discover QKey, your ultimate destination for cutting-edge digital solutions. Explore our innovative products and services designed to elevate your business in the digital age.",
+  title: "Advocate - Your AI-powered legal guide.",
+  description: "Get started with AI-powered legal guidance today.",
 };
 
 export default function RootLayout({ children }) {

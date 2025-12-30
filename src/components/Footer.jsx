@@ -22,7 +22,7 @@ export default function Footer() {
 
                     <hr class="border-[#FBFAF9] opacity-10 mb-8" />
 
-                    <div class="text-center text-sm opacity-70 leading-relaxed">
+                    <div class="text-center text-gray-300/60 text-[13.4px] leading-relaxed">
                     <p class="mb-2">
                         Advocate provides educational legal information, not legal advice. 
                         For specific legal matters, consult a licensed attorney in your jurisdiction.

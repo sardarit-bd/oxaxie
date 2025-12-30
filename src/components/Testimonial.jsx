@@ -16,12 +16,12 @@ const Testimonial = () => {
       </blockquote>
 
       <div className="flex items-center justify-center gap-4 text-left">
-        <div className="w-12 h-12 rounded-full bg-[#DDE0E1] flex items-center justify-center text-primary-foreground text-lg shrink-0">
+        <div className="w-12 h-12 rounded-full bg-[#DDE0E1] flex items-center justify-center text-primary-foreground text-lg shrink-0 font-serif">
           A
         </div>
         <div>
-          <div className="text-md font-bold text-foreground">Anonymous User</div>
-          <div className="text-sm text-[#626D84]">Landlord/Tenant Dispute</div>
+          <div class="text-md font-bold text-[15px] text-slate-700">Anonymous User</div>
+          <div className="text-[14px] text-[#626D84]">Landlord/Tenant Dispute</div>
         </div>
       </div>
 
