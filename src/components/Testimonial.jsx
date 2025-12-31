@@ -20,7 +20,7 @@ const Testimonial = () => {
           A
         </div>
         <div>
-          <div class="text-md font-bold text-[15px] text-slate-700">Anonymous User</div>
+          <div className="text-md font-bold text-[15px] text-slate-700">Anonymous User</div>
           <div className="text-[14px] text-[#626D84]">Landlord/Tenant Dispute</div>
         </div>
       </div>
