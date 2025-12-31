@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Scale, ArrowLeft, Send, Bot, FileText, Plus } from 'lucide-react';
+import Link from 'next/link';
 
 export default function LegalAdvocateChat() {
   const [activeTab, setActiveTab] = useState('chat');
@@ -19,10 +20,12 @@ export default function LegalAdvocateChat() {
             </div>
             <span className="text-gray-500 text-sm">| Landlord/Tenant • ghg</span>
           </div>
-          <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm">
-            <ArrowLeft className="w-4 h-4" />
-            Back
+          <Link href="/">
+            <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm cursor-pointer">
+              <ArrowLeft className="w-4 h-4" />
+              Back
           </button>
+          </Link>
         </div>
       </div>
 
