@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Scale, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '@/lib/api';
+import { apiFetch } from '../../../lib/api';
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
@@ -22,25 +22,21 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await apiFetch('/api/login', {
-        method: 'POST',
-        body: JSON.stringify({ 
-          email, 
-          password
-        }),
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
-
-      const token = response.data.authorization.token;
-      const user = response.data.user;
 
       console.log(response.message);
 
 
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('user', JSON.stringify(user));
+      if (!response.ok) {
+        const err = await response.json();
+        throw err;
+      }
 
-      router.push('/dashboard');
-        
+      router.push("/dashboard");  
 
     } catch (err) {
       if (err.status === 401) {

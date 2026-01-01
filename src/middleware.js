@@ -3,9 +3,9 @@ import { NextResponse } from "next/server";
 
 async function verifyJWT(token) {
     try {
-        const secret = new TextEncoder().encode(process.env.NEXT_PUBLIC_JWT_SECRET);
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const { payload } = await jwtVerify(token, secret, {
-            clockTolerance: 30 // allow 30 seconds difference
+            clockTolerance: 30
         });
         return payload;
     } catch (err) {
@@ -14,68 +14,53 @@ async function verifyJWT(token) {
     }
 }
 
-
 export default async function middleware(req) {
-
     const path = req.nextUrl.pathname;
     const token = req.cookies.get("authToken")?.value;
     const role = req.cookies.get("role")?.value;
 
-
-
     // Check token validity
     const decoded = token ? await verifyJWT(token) : null;
-
 
     // Protected routes
     const protectedRoutes = ['/dashboard'];
     const isProtected = protectedRoutes.some(route => path.startsWith(route));
 
-
-
-    if (!decoded) {
-
+    // If not logged in but trying to access protected routes
+    if (!decoded && isProtected) {
         const res = NextResponse.redirect(new URL("/login", req.nextUrl));
-
-        // Clear cookies correctly on the response
+        
+        // Clear cookies on redirect
         ["ID", "role", "authToken", "name"].forEach(cookieName => {
             res.cookies.set(cookieName, "", {
                 path: "/",
-                maxAge: 0, // delete cookie
+                maxAge: 0,
             });
         });
-    }
-
-
-
-    // If not logged in but trying to access protected routes
-    if (!decoded && isProtected) {
-
-        const res = NextResponse.redirect(new URL("/login", req.nextUrl));
+        
         return res;
-
     }
 
     // Role-based access
     if (decoded && role) {
-        if (role == "admin" && path.startsWith("/dashboard/user")) {
+        if (role === "admin" && path.startsWith("/dashboard/user")) {
             return NextResponse.redirect(new URL("/dashboard/admin", req.nextUrl));
         }
-    }
-
-    if (decoded && role) {
-        if (role == "user" && path.startsWith("/dashboard/admin")) {
+        
+        if (role === "user" && path.startsWith("/dashboard/admin")) {
             return NextResponse.redirect(new URL("/dashboard/user", req.nextUrl));
         }
     }
 
-    // If logged in but trying to visit signin page
-    if (decoded && path.startsWith("/login")) {
+    // If logged in but trying to visit login page
+    if (decoded && (path === "/login" || path === "/signup")) {
         const redirects = {
             "admin": "/dashboard/admin",
             "user": "/dashboard/user",
         };
-        if (role && redirects[role]) return NextResponse.redirect(new URL(redirects[role], req.nextUrl));
+        
+        const redirectPath = redirects[role] || "/dashboard";
+        return NextResponse.redirect(new URL(redirectPath, req.nextUrl));
     }
 
     return NextResponse.next();
