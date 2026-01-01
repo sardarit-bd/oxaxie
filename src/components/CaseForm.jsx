@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Home, 
   Briefcase, 
@@ -11,12 +12,11 @@ import {
   Upload, 
   MapPin, 
   ArrowRight,
-  MessageSquare,
   X
 } from "lucide-react";
 
 const issueTypes = [
-  { id: "landlord", icon: Home, label: "Landlord/Tenant", description: "Leases, deposits, evictions" },
+  { id: "landlord_tenant", icon: Home, label: "Landlord/Tenant", description: "Leases, deposits, evictions" },
   { id: "employment", icon: Briefcase, label: "Employment", description: "Wages, wrongful termination" },
   { id: "contracts", icon: FileText, label: "Contracts", description: "Disputes, breaches, claims" },
   { id: "consumer", icon: ShoppingBag, label: "Consumer Rights", description: "Products, services, refunds" },
@@ -25,14 +25,23 @@ const issueTypes = [
 ];
 
 const CaseForm = () => {
+  const router = useRouter();
+  
+  // Form state
   const [selectedIssue, setSelectedIssue] = useState(null);
-  const [location, setLocation] = useState("");
+  const [locationCity, setLocationCity] = useState("");
+  const [locationState, setLocationState] = useState("");
+  const [locationCountry, setLocationCountry] = useState("");
   const [situation, setSituation] = useState("");
-
   const [files, setFiles] = useState([]);
+  
+  // UI state
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleFileChange = (e) => {
     const newFiles = Array.from(e.target.files).map(file => ({
+      file: file, // Store the actual file object
       name: file.name,
       size: (file.size / 1024).toFixed(0) + ' KB',
       id: Math.random().toString(36).substr(2, 9)
@@ -44,7 +53,86 @@ const CaseForm = () => {
     setFiles(files.filter(f => f.id !== id));
   };
 
-  const hasFiles = files.length > 0;
+  const parseLocation = (locationString) => {
+    // Parse "City, State, Country" format
+    const parts = locationString.split(',').map(s => s.trim());
+    return {
+      city: parts[0] || '',
+      state: parts[1] || '',
+      country: parts[2] || 'US'
+    };
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation
+    if (!selectedIssue) {
+      setError('Please select an issue type');
+      return;
+    }
+
+    if (!locationCity || !locationState) {
+      setError('Please enter your location in the format: City, State, Country');
+      return;
+    }
+
+    if (!situation.trim()) {
+      setError('Please describe your situation');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // Prepare form data
+      const formData = new FormData();
+      formData.append('issue_type', selectedIssue);
+      formData.append('location_city', locationCity);
+      formData.append('location_state', locationState);
+      formData.append('location_country', locationCountry || 'US');
+      formData.append('situation_description', situation);
+      formData.append('status', 'active');
+
+      // Add files if any
+      files.forEach((fileObj, index) => {
+        formData.append(`documents[${index}]`, fileObj.file);
+      });
+
+      // Submit to API
+      const response = await fetch('/api/case', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create case');
+      }
+
+      console.log('Case created:', data);
+      router.push(`/case/${data.data.id}`);
+      
+    } catch (err) {
+      console.error('Error creating case:', err);
+      setError(err.message || 'Failed to create case. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLocationChange = (e) => {
+    const value = e.target.value;
+    const parsed = parseLocation(value);
+    setLocationCity(parsed.city);
+    setLocationState(parsed.state);
+    setLocationCountry(parsed.country);
+  };
+
+  const isFormValid = selectedIssue && locationCity && locationState && situation.trim();
 
   return (
     <section className="py-24 bg-[#FBFAF9]">
@@ -60,8 +148,15 @@ const CaseForm = () => {
           </p>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
         {/* Form */}
-        <div className="space-y-10">
+        <form onSubmit={handleSubmit} className="space-y-10">
           
           {/* Step 1: Issue Type */}
           <div className="space-y-4">
@@ -106,10 +201,10 @@ const CaseForm = () => {
               <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                onChange={handleLocationChange}
                 placeholder="City, State/Province, Country"
                 className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-gray-300/70 text-foreground placeholder:text-muted-foreground focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors"
+                required
               />
             </div>
             <p className="text-xs text-gray-500">This helps us provide jurisdiction-specific legal guidance</p>
@@ -130,101 +225,100 @@ const CaseForm = () => {
                 rows={5}
                 placeholder="Tell us what happened in your own words. Include relevant dates, people involved, what was said or done, and what outcome you're hoping for..."
                 className="w-full px-4 py-4 rounded-xl border-2 border-gray-300/70 text-foreground placeholder:text-muted-foreground focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors resize-none"
+                required
               />
             </div>
             <p className="text-xs text-gray-500">The more detail you provide, the better guidance we can give</p>
           </div>
 
           {/* Step 4: Upload Documents */}
-         <div className="space-y-4">
-        <label className="text-sm font-medium text-foreground flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
-            4
-          </span>
-          Upload relevant documents (optional)
-        </label>
-        
-        <div className="relative border-2 border-dashed border-gray-300/70 rounded-xl p-8 transition-all hover:border-[#F7BB57]/60 group cursor-pointer text-center bg-gray-50/30">
-          <input
-            type="file"
-            multiple
-            onChange={handleFileChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-          />
-          <div className="flex flex-col items-center">
-            <div className="w-12 h-12 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <Upload className="w-8 h-8 text-gray-400" />
+          <div className="space-y-4">
+            <label className="text-sm font-medium text-foreground flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
+                4
+              </span>
+              Upload relevant documents (optional)
+            </label>
+            
+            <div className="relative border-2 border-dashed border-gray-300/70 rounded-xl p-8 transition-all hover:border-[#F7BB57]/60 group cursor-pointer text-center bg-gray-50/30">
+              <input
+                type="file"
+                multiple
+                onChange={handleFileChange}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+              />
+              <div className="flex flex-col items-center">
+                <div className="w-12 h-12 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <Upload className="w-8 h-8 text-gray-400" />
+                </div>
+                <div className="font-semibold text-black leading-tight">Drop files here or click to upload</div>
+                <div className="text-[11px] text-gray-500 mt-1.5">
+                  Contracts, leases, notices, correspondence, photos
+                </div>
+              </div>
             </div>
-            <div className="font-semibold text-black leading-tight">Drop files here or click to upload</div>
-            <div className="text-[11px] text-gray-500 mt-1.5">
-              Contracts, leases, notices, correspondence, photos
-            </div>
+
+            {/* Uploaded Files List */}
+            {files.length > 0 && (
+              <div className="space-y-2">
+                {files.map((file) => (
+                  <div 
+                    key={file.id} 
+                    className="flex items-center gap-3 p-3 bg-[#F5F3F1] rounded-lg border border-gray-200/50"
+                  >
+                    <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-sm text-slate-800 truncate flex-1 font-medium">{file.name}</span>
+                    <span className="text-[12px] text-gray-400 uppercase">{file.size}</span>
+                    <button 
+                      onClick={() => removeFile(file.id)}
+                      type="button" 
+                      className="p-1 transition-colors hover:bg-gray-200/40 rounded cursor-pointer"
+                    >
+                      <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
 
-        {/* Uploaded Files List */}
-        <div className="space-y-2">
-          {files.map((file) => (
-            <div 
-              key={file.id} 
-              className="flex items-center gap-3 p-3 bg-[#F5F3F1] rounded-lg border border-gray-200/50"
-            >
-              <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
-              <span className="text-sm text-slate-800 truncate flex-1 font-medium">{file.name}</span>
-              <span className="text-[12px] text-gray-400 uppercase">{file.size}</span>
-              <button 
-                onClick={() => removeFile(file.id)}
-                type="button" 
-                className="p-1 transition-colors hover:bg-gray-200/40 rounded cursor-pointer"
-              >
-                <X className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Action Button */}
-      <button 
-        className={`
-          relative inline-flex items-center justify-center gap-2
-          whitespace-nowrap transition-all duration-300
+          {/* Submit Button */}
+          <button 
+            type="submit"
+            disabled={!isFormValid || loading}
+            className={`
+              relative inline-flex items-center justify-center gap-2
+              whitespace-nowrap transition-all duration-300
+              bg-[#F7BB57] h-[58px] px-8 rounded-[14px] w-full
+              border-t border-white/25
+              ${isFormValid && !loading
+                ? 'shadow-[0_8px_25px_-5px_rgba(247,187,87,0.5)] hover:brightness-[1.03] active:scale-[0.98] cursor-pointer' 
+                : 'shadow-md brightness-[0.98] cursor-not-allowed opacity-60'}
+              ${isFormValid && !loading ? 'text-black' : 'text-black/40'}
+              font-bold text-[17px] tracking-tight antialiased
+            `}
+            style={{
+              fontFamily: "'Google Sans', 'Outfit', sans-serif"
+            }}
+          >
+            <span className="relative z-10">
+              {loading ? 'Creating Case...' : 'Get Legal Guidance'}
+            </span>
+            
+            <ArrowRight 
+              className={`
+                w-5 h-5 stroke-[2.5px] transition-colors duration-300 relative z-10
+                ${isFormValid && !loading ? 'text-black' : 'text-black/40'}
+              `} 
+            />
+            
+            <div className="absolute inset-0 rounded-[14px] bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
+          </button>
           
-          /* Background */
-          bg-[#F7BB57] h-[58px] px-8 rounded-[14px] w-full
-          border-t border-white/25
-          
-          /* Shadow Logic */
-          ${hasFiles 
-            ? 'shadow-[0_8px_25px_-5px_rgba(247,187,87,0.5)]' 
-            : 'shadow-md brightness-[0.98]'}
-          
-          /* TEXT COLOR LOGIC: black/40 default, black when files exist */
-          ${hasFiles ? 'text-black' : 'text-black/40'}
-          
-          /* Typography & Interaction */
-          font-bold text-[17px] tracking-tight antialiased
-          ${hasFiles ? 'hover:brightness-[1.03] active:scale-[0.98] cursor-pointer' : 'cursor-default'}
-        `}
-        style={{
-          fontFamily: "'Google Sans', 'Outfit', sans-serif", marginBottom: '0px'
-        }}
-      >
-        <span className="relative z-10">Get Legal Guidance</span>
-        
-        {/* ARROW COLOR LOGIC: black/40 default, black when files exist */}
-        <ArrowRight 
-          className={`
-            w-5 h-5 stroke-[2.5px] transition-colors duration-300 relative z-10
-            ${hasFiles ? 'text-black' : 'text-black/40'}
-          `} 
-        />
-        
-        {/* Glossy top overlay */}
-        <div className="absolute inset-0 rounded-[14px] bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
-      </button>
-      <p className='text-xs text-gray-500/80 text-center pt-4'>Your information is encrypted and never shared. This is not legal advice — it's educational guidance to help you understand your options.</p>
-        </div>
+          <p className='text-xs text-gray-500/80 text-center pt-4'>
+            Your information is encrypted and never shared. This is not legal advice — it's educational guidance to help you understand your options.
+          </p>
+        </form>
       </div>
     </section>
   );
