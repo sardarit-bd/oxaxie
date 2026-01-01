@@ -1,12 +1,81 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Scale, ArrowLeft, Send, Bot, FileText, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
-export default function LegalAdvocateChat() {
+export default function CaseChat() {
+  const params = useParams();
+  const caseId = params.id;
+
   const [activeTab, setActiveTab] = useState('chat');
   const [message, setMessage] = useState('');
+  const [caseData, setCaseData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (caseId) {
+      fetchCaseData();
+    }
+  }, [caseId]);
+
+  const fetchCaseData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/case/${caseId}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch case data');
+      }
+
+      const result = await response.json();
+      setCaseData(result.data || result);
+    } catch (err) {
+      console.error('Error fetching case:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatIssueType = (issueType) => {
+    const types = {
+      'landlord_tenant': 'Landlord/Tenant',
+      'employment': 'Employment',
+      'family': 'Family',
+      'business': 'Business',
+      'criminal': 'Criminal',
+      'consumer': 'Consumer Rights',
+      'contracts': 'Contracts',
+    };
+    return types[issueType] || issueType.replace(/_/g, ' ');
+  };
+
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-gray-500">Loading case...</div>
+      </div>
+    );
+  }
+
+  if (error || !caseData) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error || 'Case not found'}</p>
+          <Link href="/dashboard">
+            <button className="text-blue-600 hover:underline">Back to Dashboard</button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -18,13 +87,15 @@ export default function LegalAdvocateChat() {
               <Scale className="w-6 h-6" />
               <span className="font-semibold text-lg">Advocate</span>
             </div>
-            <span className="text-gray-500 text-sm">| Landlord/Tenant • ghg</span>
+            <span className="text-gray-500 text-sm">
+              | {formatIssueType(caseData.issue_type)} • {caseData.location_city}
+            </span>
           </div>
           <Link href="/dashboard">
             <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm cursor-pointer">
               <ArrowLeft className="w-4 h-4" />
               Back
-          </button>
+            </button>
           </Link>
         </div>
       </div>
@@ -71,18 +142,20 @@ export default function LegalAdvocateChat() {
                   
                   {/* Message Content */}
                   <div className="flex-1 bg-[#F0EEEA] rounded-lg p-4 md:p-5 text-xs md:text-sm leading-relaxed">
-                    <p className="mb-3 md:mb-4">I've reviewed your landlord/tenant situation in ghg. Here's my initial analysis:</p>
+                    <p className="mb-3 md:mb-4">
+                      I've reviewed your {formatIssueType(caseData.issue_type).toLowerCase()} situation in {caseData.location_city}, {caseData.location_state}. Here's my initial analysis:
+                    </p>
                     
                     <div className="mb-3 md:mb-4">
                       <p className="font-semibold mb-2">**Understanding Your Situation:**</p>
-                      <p>fghfgh</p>
+                      <p>{caseData.situation_description}</p>
                     </div>
 
                     <div className="mb-3 md:mb-4">
                       <p className="font-semibold mb-2">**Key Legal Considerations:**</p>
                       <ul className="space-y-1">
                         <li className="pl-3 relative before:content-['•'] before:absolute before:left-0">
-                          Your rights are protected under local and state laws in your jurisdiction
+                          Your rights are protected under local and state laws in {caseData.location_state}
                         </li>
                         <li className="pl-3 relative before:content-['•'] before:absolute before:left-0">
                           Documentation is crucial - keep records of all communications
@@ -192,17 +265,22 @@ export default function LegalAdvocateChat() {
           <div className="space-y-4 text-sm">
             <div>
               <p className="text-gray-600 mb-1">Issue Type</p>
-              <p className="font-medium">Landlord/Tenant</p>
+              <p className="font-medium">{formatIssueType(caseData.issue_type)}</p>
             </div>
             
             <div>
               <p className="text-gray-600 mb-1">Location</p>
-              <p className="font-medium">ghg</p>
+              <p className="font-medium">{caseData.location_city}, {caseData.location_state}</p>
+            </div>
+            
+            <div>
+              <p className="text-gray-600 mb-1">Status</p>
+              <p className="font-medium capitalize">{caseData.status}</p>
             </div>
             
             <div>
               <p className="text-gray-600 mb-1">Situation</p>
-              <p className="font-medium">fghfgh</p>
+              <p className="font-medium text-xs leading-relaxed">{caseData.situation_description}</p>
             </div>
           </div>
 

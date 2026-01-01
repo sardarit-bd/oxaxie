@@ -56,12 +56,16 @@ export default function Dashboard() {
     };
 
     const formatDate = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', {
-            month: 'numeric',
-            day: 'numeric',
-            year: 'numeric'
-        });
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const year = date.getFullYear();
+            return `${month}/${day}/${year}`;
+        } catch (error) {
+            return dateString;
+        }
     };
 
     const getStatusColor = (status) => {
@@ -127,18 +131,18 @@ export default function Dashboard() {
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                     <div>
-                        <p className="text-lg sm:text-4xl text-gray-900 mb-2 font-serif">
+                        <h1 className="text-3xl sm:text-4xl text-gray-900 mb-2 font-serif">
                             Your Cases
-                        </p>
+                        </h1>
                         <p className="text-base text-gray-600">
                             Manage your legal matters and get guidance
                         </p>
                     </div>
                     <button 
                         onClick={handleNewCase}
-                        className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#ffa70a] text-gray-900 font-semibold text-sm px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
+                        className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#ffa70a] text-gray-900 font-medium px-4 py-2.5 rounded-lg transition-colors duration-200 shadow-sm"
                     >
-                        <Plus size={16} />
+                        <Plus size={18} />
                         <span>New Case</span>
                     </button>
                 </div>
@@ -155,7 +159,7 @@ export default function Dashboard() {
                     <div className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-12 md:p-16">
                         <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
                             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                                <FileText size={32} className="text-gray-400" />
+                                <FileText size={36} className="text-gray-400" />
                             </div>
 
                             <h2 className="text-2xl font-semibold text-gray-900 mb-3">
@@ -167,10 +171,10 @@ export default function Dashboard() {
 
                             <button 
                                 onClick={handleNewCase}
-                                className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-medium px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
+                                className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-medium px-4 py-2.5 rounded-lg transition-colors duration-200 shadow-sm"
                             >
-                                <Plus size={16} />
-                                <span className="text-sm font-semibold">Create Your First Case</span>
+                                <Plus size={18} />
+                                <span>Create Your First Case</span>
                             </button>
                         </div>
                     </div>
@@ -181,13 +185,13 @@ export default function Dashboard() {
                             <div
                                 key={caseItem.id}
                                 onClick={() => handleCaseClick(caseItem.id)}
-                                className="bg-white rounded-xl border border-gray-200 p-6 hover:border-yellow-500 hover:shadow-md transition-all duration-200 cursor-pointer group"
+                                className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 hover:shadow-md transition-all duration-200 cursor-pointer group"
                             >
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         {/* Category and Status Badges */}
                                         <div className="flex items-center gap-2 mb-3">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(caseItem.issue_type)}`}>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.issue_type)}`}>
                                                 {formatIssueType(caseItem.issue_type)}
                                             </span>
                                             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(caseItem.status)}`}>
@@ -196,7 +200,7 @@ export default function Dashboard() {
                                         </div>
 
                                         {/* Case Description (as title) */}
-                                        <h3 className="text-md text-gray-900 mb-3">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
                                             {truncateText(caseItem.situation_description, 100)}
                                         </h3>
 
@@ -216,7 +220,7 @@ export default function Dashboard() {
                                     {/* Arrow Icon */}
                                     <ChevronRight 
                                         size={20} 
-                                        className="text-gray-500 group-hover:text-yellow-500 transition-colors flex-shrink-0 mt-1"
+                                        className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0 mt-1"
                                     />
                                 </div>
                             </div>
