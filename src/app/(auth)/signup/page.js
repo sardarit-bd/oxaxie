@@ -3,28 +3,69 @@
 import React, { useState } from 'react';
 import { Scale, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 
-export default function LoginPage() {
-    const [showPassword, setShowPassword] = useState(false);
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
+export default function SignupPage() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log('Sign in:', { email, password });
-    };
-    
+  const router = useRouter();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await apiFetch('/api/register', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          email, 
+          password,
+          name
+        }),
+      });
+
+      const token = response.data.authorization.token;
+      const user = response.data.user;
+
+      console.log(response.message);
+
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      router.push('/dashboard');
+
+    } catch (err) {
+      if (err.status === 422) {
+        const errors = err.errors || {};
+        const messages = Object.values(errors).flat();
+        setError(messages[0] || 'Please check your input.');
+      } else if (err.status === 409 || err.message?.toLowerCase().includes('already')) {
+        setError('This email is already registered.');
+      } else {
+        setError(err.message || 'Unable to create account. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen flex">
       <div className="w-full lg:w-1/2 bg-[#FBFAF9] flex items-start sm:items-center justify-center p-6 pt-4 sm:p-8">
         <div className="w-full max-w-[340px] sm:max-w-md mx-auto">
           {/* Back to home link */}
           <Link href="/">
-          <button className="flex items-center gap-2 text-[#666] text-sm mb-12 hover:text-[#333] transition-colors">
-            <ArrowLeft size={16} />
-            <span className="cursor-pointer">Back to home</span>
-          </button>
+            <button className="flex items-center gap-2 text-[#666] text-sm mb-12 hover:text-[#333] transition-colors">
+              <ArrowLeft size={16} />
+              <span className="cursor-pointer">Back to home</span>
+            </button>
           </Link>
 
           {/* Logo and Title */}
@@ -40,8 +81,15 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form */}
-          <div className="space-y-5">
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          {/* Form - CORRECTLY WRAPS ALL FIELDS AND BUTTON */}
+          <form onSubmit={handleSubmit} className="space-y-5">
             {/* Full Name */}
             <div>
               <label htmlFor="name" className="block text-sm mb-2 text-slate-700 font-semibold">
@@ -53,6 +101,7 @@ export default function LoginPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="John Doe"
+                required
                 className="w-full px-4 py-3 bg-white border-2 border-[#d4d4d0] rounded-xl text-[#1a1a1a] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all"
               />
             </div>
@@ -68,6 +117,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
+                required
                 className="w-full px-4 py-3 bg-white border-2 border-[#d4d4d0] rounded-xl text-[#1a1a1a] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all"
               />
             </div>
@@ -84,6 +134,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
+                  required
                   className="w-full px-4 py-3 bg-white border-2 border-[#d4d4d0] rounded-xl text-[#1a1a1a] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all pr-12"
                 />
                 <button
@@ -96,25 +147,25 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Sign Up Button */}
+            {/* Create Account Button */}
             <button
-              onClick={handleSubmit}
+              type="submit"
+              disabled={loading || !name || !email || !password}
               className="w-full bg-[#f59e0b] hover:bg-[#ea950a] text-slate-800 font-[560] py-3.5 rounded-lg transition-colors shadow-sm"
             >
-              Create Account
+              {loading ? 'Creating Account...' : 'Create Account'}
             </button>
+          </form>
 
-            {/* Login */}
-            <p className="text-center text-[#666] text-md">
-              Already have an account?{' '}
-              <Link href="/login">
+          {/* Login Link */}
+          <p className="text-center text-[#666] text-md mt-6">
+            Already have an account?{' '}
+            <Link href="/login">
               <button className="text-[#f59e0b] hover:text-[#ea950a] font-medium transition-colors cursor-pointer">
                 Login
               </button>
-              </Link>
-              
-            </p>
-          </div>
+            </Link>
+          </p>
         </div>
       </div>
 

@@ -4,7 +4,7 @@ export function middleware(req) {
     const auth = req.cookies.get("auth")?.value;
     const url = req.nextUrl;
 
-    const protectedPaths = ["/user"];
+    const protectedPaths = ["/dashboard"];
 
     const isProtected = protectedPaths.some((path) =>
         url.pathname.startsWith(path)
@@ -15,7 +15,7 @@ export function middleware(req) {
     }
 
     if (auth && url.pathname.startsWith("/login")) {
-        return NextResponse.redirect(new URL("/user", req.url));
+        return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
     return NextResponse.next();
@@ -23,7 +23,7 @@ export function middleware(req) {
 
 export const config = {
     matcher: [
-        "/user/:path*",
+        "/dashboard/:path*",
         "/login",
     ],
 };

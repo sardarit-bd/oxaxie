@@ -3,115 +3,167 @@
 import React, { useState } from 'react';
 import { Scale, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { apiFetch } from '@/lib/api';
 
 export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log('Sign in:', { email, password });
-    };
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    const router = useRouter();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await apiFetch('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ 
+          email, 
+          password
+        }),
+      });
+
+      const token = response.data.authorization.token;
+      const user = response.data.user;
+
+      console.log(response.message);
+
+
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      router.push('/dashboard');
+        
+
+    } catch (err) {
+      if (err.status === 401) {
+        setError('The credentials do not match our records.');
+      } else if (err.status === 422) {
+
+        const firstError = Object.values(err.errors || {})[0]?.[0];
+        setError(firstError || 'Please check your input.');
+      } else {
+        setError(err.message || 'Unable to login. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
     
   return (
     <main className="min-h-screen flex">
-      <div className="w-full lg:w-1/2 bg-[#FBFAF9] flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Back to home link */}
-          <Link href="/">
-          <button className="flex items-center gap-2 text-[#666] text-sm mb-12 hover:text-[#333] transition-colors">
-            <ArrowLeft size={16} />
-            <span className="cursor-pointer">Back to home</span>
-          </button>
-          </Link>
+  <div className="w-full lg:w-1/2 bg-[#FBFAF9] flex items-center justify-center p-8">
+    <div className="w-full max-w-md">
+      {/* Back to home link */}
+      <Link href="/">
+        <button className="flex items-center gap-2 text-[#666] text-sm mb-12 hover:text-[#333] transition-colors">
+          <ArrowLeft size={16} />
+          <span className="cursor-pointer">Back to home</span>
+        </button>
+      </Link>
 
-          {/* Logo and Title */}
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-6">
-              <Scale className="text-[#1a1a1a]" size={30} strokeWidth={2} />
-              <h1 className="text-2xl font-serif text-[#1a1a1a]">Advocate</h1>
-            </div>
-            
-            <h2 className="text-4xl font-serif text-[#1a1a1a] mb-3">Welcome back</h2>
-            <p className="text-[#666] text-base">
-              Sign in to access your cases and continue getting legal guidance.
-            </p>
-          </div>
+      {/* Logo and Title */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-6">
+          <Scale className="text-[#1a1a1a]" size={30} strokeWidth={2} />
+          <h1 className="text-2xl font-serif text-[#1a1a1a]">Advocate</h1>
+        </div>
+        
+        <h2 className="text-4xl font-serif text-[#1a1a1a] mb-3">Welcome back</h2>
+        <p className="text-[#666] text-base">
+          Sign in to access your cases and continue getting legal guidance.
+        </p>
+      </div>
 
-          {/* Form */}
-          <div className="space-y-5">
-            {/* Email Field */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-[#1a1a1a] mb-2 text-slate-700 font-semibold">
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                className="w-full px-4 py-3 bg-white border-2 border-[#d4d4d0] rounded-xl text-[#1a1a1a] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all"
-              />
-            </div>
+      {/* Error Message */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
 
-            {/* Password Field */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-[#1a1a1a] mb-2 text-slate-700 font-semibold">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-white border-2 border-[#d4d4d0] rounded-xl text-[#1a1a1a] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all pr-12"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#666] hover:text-[#333] transition-colors"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
+      {/* Form - NOW CORRECTLY WRAPS ALL FIELDS AND BUTTON */}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Email Field */}
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-[#1a1a1a] mb-2 text-slate-700 font-semibold">
+            Email Address
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="w-full px-4 py-3 bg-white border-2 border-[#d4d4d0] rounded-xl text-[#1a1a1a] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all"
+          />
+        </div>
 
-            {/* Sign In Button */}
+        {/* Password Field */}
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-[#1a1a1a] mb-2 text-slate-700 font-semibold">
+            Password
+          </label>
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full px-4 py-3 bg-white border-2 border-[#d4d4d0] rounded-xl text-[#1a1a1a] placeholder-[#999] focus:outline-none focus:ring-2 focus:ring-[#f59e0b] focus:border-transparent transition-all pr-12"
+            />
             <button
-              onClick={handleSubmit}
-              className="w-full bg-[#f59e0b] hover:bg-[#ea950a] text-slate-800 font-[560] py-3.5 rounded-lg transition-colors shadow-sm"
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#666] hover:text-[#333] transition-colors"
             >
-              Sign In
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
-
-            {/* Sign Up Link */}
-            <p className="text-center text-[#666] text-md">
-              Don't have an account?{' '}
-              <Link href="/signup">
-                <button href="#" className="text-[#f59e0b] hover:text-[#ea950a] font-medium transition-colors cursor-pointer">
-                Sign up
-              </button>
-              </Link>
-            </p>
           </div>
         </div>
-      </div>
 
-      {/* Right Side - Banner */}
-      <div className="hidden lg:flex lg:w-1/2 bg-[#232F46] items-center justify-center">
-        <div className="max-w-xl text-center p-8">
-          <h2 className="text-4xl text-white mb-6">
-            Legal guidance when you need it most
-          </h2>
-          <p className="text-[#b8c5d0] text-lg leading-relaxed">
-            Get clear, actionable advice for your legal situation. Upload documents, chat with our AI, and generate professional legal documents.
-          </p>
-        </div>
-      </div>
-    </main>
+        {/* Sign In Button - NOW INSIDE THE FORM */}
+        <button
+          type="submit"
+          className="w-full bg-[#f59e0b] hover:bg-[#ea950a] text-slate-800 font-[560] py-3.5 rounded-lg transition-colors shadow-sm"
+        >
+          {loading ? 'Signing in...' : 'Sign In'}
+        </button>
+      </form>
+
+      {/* Sign Up Link - OUTSIDE THE FORM (correct) */}
+      <p className="text-center text-[#666] text-md mt-6">
+        Don't have an account?{' '}
+        <Link href="/signup">
+          <button href="#" className="text-[#f59e0b] hover:text-[#ea950a] font-medium transition-colors cursor-pointer">
+            Sign up
+          </button>
+        </Link>
+      </p>
+    </div>
+  </div>
+
+  {/* Right Side - Banner */}
+  <div className="hidden lg:flex lg:w-1/2 bg-[#232F46] items-center justify-center">
+    <div className="max-w-xl text-center p-8">
+      <h2 className="text-4xl text-white mb-6">
+        Legal guidance when you need it most
+      </h2>
+      <p className="text-[#b8c5d0] text-lg leading-relaxed">
+        Get clear, actionable advice for your legal situation. Upload documents, chat with our AI, and generate professional legal documents.
+      </p>
+    </div>
+  </div>
+</main>
   );
 }
