@@ -140,10 +140,10 @@ export default function Dashboard() {
                     </div>
                     <button 
                         onClick={handleNewCase}
-                        className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#ffa70a] text-gray-900 font-medium px-4 py-2.5 rounded-lg transition-colors duration-200 shadow-sm"
+                        className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#ffa70a] text-gray-900 font-medium px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
                     >
                         <Plus size={18} />
-                        <span>New Case</span>
+                        <span className='text-sm font-semibold'>New Case</span>
                     </button>
                 </div>
 
@@ -171,10 +171,10 @@ export default function Dashboard() {
 
                             <button 
                                 onClick={handleNewCase}
-                                className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-medium px-4 py-2.5 rounded-lg transition-colors duration-200 shadow-sm"
+                                className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-medium px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
                             >
                                 <Plus size={18} />
-                                <span>Create Your First Case</span>
+                                <span className='text-sm font-semibold'>Create Your First Case</span>
                             </button>
                         </div>
                     </div>
@@ -200,7 +200,7 @@ export default function Dashboard() {
                                         </div>
 
                                         {/* Case Description (as title) */}
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                                        <h3 className="text-lg text-gray-900 mb-3">
                                             {truncateText(caseItem.situation_description, 100)}
                                         </h3>
 
@@ -228,7 +228,7 @@ export default function Dashboard() {
                     </div>
                 )}
 
-                {/* Pagination (if needed) */}
+                {/* Pagination */}
                 {pagination && (pagination.nextPageUrl || pagination.prevPageUrl) && (
                     <div className="flex justify-center gap-4 mt-8">
                         {pagination.prevPageUrl && (

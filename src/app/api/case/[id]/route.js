@@ -17,7 +17,6 @@ export async function GET(req, context) {
       );
     }
 
-    // Await params in Next.js 15
     const params = await context.params;
     const caseId = params.id;
     
@@ -26,7 +25,6 @@ export async function GET(req, context) {
     const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/case/${caseId}`;
     console.log('Calling backend:', backendUrl);
 
-    // Call Laravel backend
     const response = await fetch(backendUrl, {
       method: "GET",
       headers: {

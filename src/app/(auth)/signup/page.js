@@ -22,29 +22,41 @@ export default function SignupPage() {
     setLoading(true);
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
-      console.log(response.message);
-
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw err;
+      // Parse JSON response
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error("Failed to parse response:", jsonError);
+        throw new Error("Server returned an invalid response. Please try again.");
       }
 
+      console.log(data.message);
+
+      if (!response.ok) {
+        throw data;
+      }
+
+      // Success - redirect to dashboard
       router.push("/dashboard");
 
     } catch (err) {
+      console.error('Signup error:', err);
+      
       if (err.status === 422) {
         const errors = err.errors || {};
         const messages = Object.values(errors).flat();
         setError(messages[0] || 'Please check your input.');
       } else if (err.status === 409 || err.message?.toLowerCase().includes('already')) {
         setError('This email is already registered.');
+      } else if (err.status === 503) {
+        setError('Unable to connect to server. Please check your connection and try again.');
       } else {
         setError(err.message || 'Unable to create account. Please try again.');
       }
