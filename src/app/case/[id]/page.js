@@ -280,7 +280,7 @@ What would you like to explore first? You can ask me anything about your situati
           <div className="flex border-b border-gray-200 px-4 md:px-6">
             <button
               onClick={() => setActiveTab('chat')}
-              className={`px-3 md:px-4 py-3 text-xs md:text-sm border-b-2 transition-colors ${
+              className={`px-3 md:px-4 py-3 text-xs md:text-sm border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'chat'
                   ? 'border-yellow-500 text-gray-900 font-semibold'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -290,7 +290,7 @@ What would you like to explore first? You can ask me anything about your situati
             </button>
             <button
               onClick={() => setActiveTab('documents')}
-              className={`px-3 md:px-4 py-3 text-xs md:text-sm border-b-2 transition-colors ${
+              className={`px-3 md:px-4 py-3 text-xs md:text-sm border-b-2 transition-colors cursor-pointer ${
                 activeTab === 'documents'
                   ? 'border-yellow-500 text-gray-900 font-semibold'
                   : 'border-transparent text-gray-600 hover:text-gray-900'
@@ -371,17 +371,17 @@ What would you like to explore first? You can ask me anything about your situati
                 <div className="mb-6">
                   <h2 className="text-sm md:text-base font-semibold mb-4">Generate a Document</h2>
                   <div className="flex flex-wrap gap-2">
-                    <button className="flex items-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm hover:bg-gray-50 transition-colors">
+                    <button className="flex items-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
                       <Plus className="w-3 h-3 md:w-4 md:h-4" />
                       Demand Letter
                     </button>
-                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm hover:bg-gray-50 transition-colors">
+                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
                       Formal Notice
                     </button>
-                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm hover:bg-gray-50 transition-colors">
+                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
                       Response Letter
                     </button>
-                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm hover:bg-gray-50 transition-colors">
+                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
                       Cease & Desist
                     </button>
                   </div>
