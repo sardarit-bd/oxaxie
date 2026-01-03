@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 export async function POST(req, context) {
   try {
-    // Get cookies (await!)
+
     const cookieStore = await cookies();
     const token = cookieStore.get('authToken')?.value;
 
@@ -14,13 +14,13 @@ export async function POST(req, context) {
       );
     }
 
-    // Unwrap params properly
-    const params = await context.params; // ✅ unwrap the promise
-    const paymentId = params.paymentId; // now this works safely
+
+    const params = await context.params;
+    const paymentId = params.paymentId; 
 
     const body = await req.json();
 
-    // Forward request to Laravel
+
     const apiRes = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/${paymentId}/verify`,
       {
