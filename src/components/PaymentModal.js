@@ -24,7 +24,6 @@ const CARD_ELEMENT_OPTIONS = {
 function PaymentForm({ plan, onSuccess, onCancel }) {
   const stripe = useStripe();
   const elements = useElements();
-  const { initializePayment, confirmPayment, verifyPayment, loading, error } = useStripePayment();
   
   const [processing, setProcessing] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
@@ -33,71 +32,73 @@ function PaymentForm({ plan, onSuccess, onCancel }) {
   const [paymentId, setPaymentId] = useState(null);
   const [cardholderName, setCardholderName] = useState('');
 
-  const initialized = useRef(false);
+  const {
+  initializePayment,
+  confirmPayment,
+  verifyPayment,
+  loading,
+  error,
+  paymentData,
+  stripePromise,
+} = useStripePayment();
 
-  useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
+useEffect(() => {
+  if (!plan) return;
 
-    initializePayment(plan);
-  }, [plan.id]);
+  const init = async () => {
+    try {
+      await initializePayment(plan);
+
+    } catch (err) {
+      console.error('Payment init failed', err);
+    }
+  };
+
+  init();
+}, [plan.id]);
+
+
 
 
 
   const handleSubmit = async (event) => {
-    event.preventDefault();
+  event.preventDefault();
+  if (!stripe || !elements || !paymentData?.clientSecret) return;
 
-    if (!stripe || !elements || !clientSecret) {
-      return;
+  setProcessing(true);
+  setCardError(null);
+
+  try {
+    const cardElement = elements.getElement(CardElement);
+
+    const { error: methodError, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: cardElement,
+      billing_details: { name: cardholderName },
+    });
+
+    if (methodError) throw new Error(methodError.message);
+
+    const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+      paymentData.clientSecret,
+      { payment_method: paymentMethod.id }
+    );
+
+    if (confirmError) throw new Error(confirmError.message);
+
+    if (paymentIntent.status === 'succeeded') {
+      await verifyPayment(paymentData.paymentId, paymentIntent.id);
+      setSucceeded(true);
+      setTimeout(() => onSuccess(paymentIntent), 2000);
     }
+  } catch (err) {
+    console.error('Payment error:', err);
+    setCardError(err.message);
+  } finally {
+    setProcessing(false);
+  }
+};
 
-    setProcessing(true);
-    setCardError(null);
-
-    try {
-      const cardElement = elements.getElement(CardElement);
-
-      // Create payment method
-      const { error: methodError, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-        billing_details: {
-          name: cardholderName,
-        },
-      });
-
-      if (methodError) {
-        throw new Error(methodError.message);
-      }
-
-      // Confirm payment
-      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-        clientSecret,
-        {
-          payment_method: paymentMethod.id,
-        }
-      );
-
-      if (confirmError) {
-        throw new Error(confirmError.message);
-      }
-
-      if (paymentIntent.status === 'succeeded') {
-        // Verify payment with backend
-        await verifyPayment(paymentId, paymentIntent.id);
-        
-        setSucceeded(true);
-        setTimeout(() => {
-          onSuccess(paymentIntent);
-        }, 2000);
-      }
-    } catch (err) {
-      console.error('Payment error:', err);
-      setCardError(err.message);
-    } finally {
-      setProcessing(false);
-    }
-  };
 
   if (succeeded) {
     return (
@@ -172,7 +173,12 @@ function PaymentForm({ plan, onSuccess, onCancel }) {
         </button>
         <button
           type="submit"
-          disabled={!stripe || processing || !clientSecret || !cardholderName}
+          disabled={
+            !stripe ||
+            !paymentData?.clientSecret ||
+            !cardholderName ||
+            processing
+          }
           className="flex-1 bg-[#F59F0A] hover:bg-[#F5A820] text-black font-semibold py-3 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
           {processing ? (
@@ -187,6 +193,7 @@ function PaymentForm({ plan, onSuccess, onCancel }) {
             </>
           )}
         </button>
+
       </div>
 
       {/* Security Notice */}
