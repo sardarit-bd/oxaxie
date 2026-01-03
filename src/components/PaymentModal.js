@@ -33,26 +33,26 @@ function PaymentForm({ plan, onSuccess, onCancel }) {
   const [cardholderName, setCardholderName] = useState('');
 
   const {
-  initializePayment,
-  confirmPayment,
-  verifyPayment,
-  loading,
-  error,
-  paymentData,
-  stripePromise,
-} = useStripePayment();
+    initializePayment,
+    confirmPayment,
+    verifyPayment,
+    loading,
+    error,
+    paymentData,
+    stripePromise,
+  } = useStripePayment();
 
-useEffect(() => {
-  if (!plan) return;
+  useEffect(() => {
+    if (!plan) return;
 
-  const init = async () => {
-    try {
-      await initializePayment(plan);
+    const init = async () => {
+      try {
+        await initializePayment(plan);
 
-    } catch (err) {
-      console.error('Payment init failed', err);
-    }
-  };
+      } catch (err) {
+        console.error('Payment init failed', err);
+      }
+    };
 
   init();
 }, [plan.id]);
@@ -62,42 +62,43 @@ useEffect(() => {
 
 
   const handleSubmit = async (event) => {
-  event.preventDefault();
-  if (!stripe || !elements || !paymentData?.clientSecret) return;
+    event.preventDefault();
+    if (!stripe || !elements || !paymentData?.clientSecret) return;
 
-  setProcessing(true);
-  setCardError(null);
+    setProcessing(true);
+    setCardError(null);
 
-  try {
-    const cardElement = elements.getElement(CardElement);
+    try {
+      const cardElement = elements.getElement(CardElement);
 
-    const { error: methodError, paymentMethod } = await stripe.createPaymentMethod({
-      type: 'card',
-      card: cardElement,
-      billing_details: { name: cardholderName },
-    });
+      const { error: methodError, paymentMethod } = await stripe.createPaymentMethod({
+        type: 'card',
+        card: cardElement,
+        billing_details: { name: cardholderName },
+      });
+      if (methodError) throw new Error(methodError.message);
 
-    if (methodError) throw new Error(methodError.message);
+      const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+        paymentData.clientSecret,
+        { payment_method: paymentMethod.id }
+      );
+      if (confirmError) throw new Error(confirmError.message);
 
-    const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-      paymentData.clientSecret,
-      { payment_method: paymentMethod.id }
-    );
+      if (paymentIntent.status === 'succeeded') {
+        await verifyPayment(paymentData.paymentId, paymentIntent.id, plan);
 
-    if (confirmError) throw new Error(confirmError.message);
+        setSucceeded(true);
+        setTimeout(() => onSuccess(paymentIntent), 2000);
+      }
 
-    if (paymentIntent.status === 'succeeded') {
-      await verifyPayment(paymentData.paymentId, paymentIntent.id);
-      setSucceeded(true);
-      setTimeout(() => onSuccess(paymentIntent), 2000);
+    } catch (err) {
+      console.error('Payment error:', err);
+      setCardError(err.message);
+    } finally {
+      setProcessing(false);
     }
-  } catch (err) {
-    console.error('Payment error:', err);
-    setCardError(err.message);
-  } finally {
-    setProcessing(false);
-  }
-};
+  };
+
 
 
   if (succeeded) {

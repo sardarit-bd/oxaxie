@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { paymentService } from '../services/paymentService';
+import api from '../services/api';
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
@@ -11,16 +12,11 @@ export const useStripePayment = () => {
 
   const initializePayment = async (plan) => {
   try {
-    console.log('\n========================================');
-    console.log('useStripePayment.initializePayment START');
-    console.log('========================================');
-    console.log('Plan received:', plan);
-    
     setLoading(true);
     setError(null);
 
     const paymentRequestData = {
-      amount: parseFloat(plan.price), // Ensure it's a number
+      amount: parseFloat(plan.price),
       currency: 'usd',
       gateway: 'stripe',
       description: `${plan.name} Plan Subscription`,
@@ -31,18 +27,8 @@ export const useStripePayment = () => {
       },
     };
 
-    console.log('Payment Request Data:');
-    console.log(JSON.stringify(paymentRequestData, null, 2));
-    console.log('Type checks:');
-    console.log('  - amount:', typeof paymentRequestData.amount, '=', paymentRequestData.amount);
-    console.log('  - currency:', typeof paymentRequestData.currency, '=', paymentRequestData.currency);
-    console.log('  - gateway:', typeof paymentRequestData.gateway, '=', paymentRequestData.gateway);
-
-    console.log('Calling paymentService.initializePayment...');
     const response = await paymentService.initializePayment(paymentRequestData);
 
-    console.log('Response received:', response);
-    console.log('========================================\n');
 
     if (!response.success) {
       throw new Error(response.message || 'Failed to initialize payment');
@@ -58,14 +44,6 @@ export const useStripePayment = () => {
     setPaymentData(payment);
     return payment;
   } catch (err) {
-    console.error('\n========================================');
-    console.error('useStripePayment ERROR');
-    console.error('========================================');
-    console.error('Error:', err);
-    console.error('Error response:', err.response?.data);
-    console.error('Error status:', err.response?.status);
-    console.error('Error headers:', err.response?.headers);
-    console.error('========================================\n');
     
     const errorMessage = err.response?.data?.message || err.message || 'An error occurred';
     setError(errorMessage);
@@ -105,22 +83,55 @@ export const useStripePayment = () => {
     }
   };
 
-  const verifyPayment = async (paymentId, paymentIntentId) => {
-    try {
-      const response = await paymentService.verifyPayment(paymentId, {
-        payment_intent_id: paymentIntentId,
-      });
+  // const verifyPayment = async (paymentId, paymentIntentId) => {
+  //   try {
+  //     const response = await paymentService.verifyPayment(paymentId, {
+  //       payment_intent_id: paymentIntentId,
+  //     });
 
-      if (!response.success) {
-        throw new Error(response.message || 'Payment verification failed');
-      }
+  //     if (!response.success) {
+  //       throw new Error(response.message || 'Payment verification failed');
+  //     }
 
-      return response.data;
-    } catch (err) {
-      console.error('Payment verification error:', err);
-      throw err;
+  //     return response.data;
+  //   } catch (err) {
+  //     console.error('Payment verification error:', err);
+  //     throw err;
+  //   }
+  // };
+
+
+const verifyPayment = async (paymentId, paymentIntentId, plan, userId) => {
+  try {
+    const response = await paymentService.verifyPayment(paymentId, {
+      payment_intent_id: paymentIntentId,
+    });
+
+    if (!response.success) {
+      throw new Error(response.message || 'Payment verification failed');
     }
-  };
+
+    const currentPeriodStart = new Date().toISOString();
+    const currentPeriodEnd = new Date();
+    currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+
+    await api.post('/subscriptions/store-or-update', {
+      plan_tier: plan.type,
+      status: 'active',
+      monthly_price: plan.price,
+      current_period_start: currentPeriodStart,
+      current_period_end: currentPeriodEnd.toISOString(),
+      stripe_subscription_id: paymentIntentId,
+      stripe_customer_id: response.data.customer_id || null,
+    });
+
+    return response.data;
+  } catch (err) {
+    console.error('Payment verification / subscription error:', err);
+    throw err;
+  }
+};
+
 
   return {
     initializePayment,
