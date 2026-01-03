@@ -17,11 +17,11 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const page = searchParams.get('page') || '1';
 
-    console.log('Fetching cases from backend:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/case/user/all-cases?page=${page}`);
+    console.log('Fetching cases from backend:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/case/user/all-cases?page=${page}`);
 
     // Call your Laravel backend
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/case/user/all-cases?page=${page}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/case/user/all-cases?page=${page}`,
       {
         method: "GET",
         headers: {

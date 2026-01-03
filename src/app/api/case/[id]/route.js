@@ -22,7 +22,7 @@ export async function GET(req, context) {
     
     console.log('Fetching case ID:', caseId);
 
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/case/${caseId}`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/case/${caseId}`;
     console.log('Calling backend:', backendUrl);
 
     const response = await fetch(backendUrl, {

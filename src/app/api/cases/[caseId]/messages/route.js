@@ -30,7 +30,7 @@ export async function GET(request, context) {
       );
     }
 
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/cases/${caseId}/messages`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/cases/${caseId}/messages`;
     console.log('Calling Laravel backend:', backendUrl);
     
     const response = await fetch(backendUrl, {

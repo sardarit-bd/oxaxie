@@ -1,4 +1,4 @@
-// File: src/app/api/auth/signup/route.js
+// File: src/app/auth/signup/route.js
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
@@ -13,10 +13,10 @@ export async function POST(req) {
       );
     }
 
-    console.log("Calling backend API:", `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/register`);
+    console.log("Calling backend API:", `${process.env.NEXT_PUBLIC_API_BASE_URL}/register`);
 
     const apiRes = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/register`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/register`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

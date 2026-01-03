@@ -123,7 +123,7 @@ export async function POST(request) {
       };
 
       try {
-        const saveUserMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/chat-messages`, {
+        const saveUserMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -197,7 +197,7 @@ Always conclude responses by asking if they have any questions or if there's any
       };
 
       try {
-        const saveAiMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/chat-messages`, {
+        const saveAiMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat-messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -30,10 +30,10 @@ export async function POST(req) {
       }
     });
 
-    console.log('Sending to backend:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/case`);
+    console.log('Sending to backend:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/case`);
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/case`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/case`,
       {
         method: "POST",
         headers: {
