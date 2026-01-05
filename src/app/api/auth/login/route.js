@@ -14,7 +14,6 @@ export async function POST(req) {
       );
     }
 
-    // Call your backend API
     const apiRes = await fetch(
       `${process.env.NEXT_PUBLIC_API_BASE_URL}/login`,
       {
@@ -26,12 +25,10 @@ export async function POST(req) {
 
     const data = await apiRes.json();
 
-    // If backend returns an error, forward it to the frontend
     if (!apiRes.ok) {
       return NextResponse.json(data, { status: apiRes.status });
     }
 
-    // Extract token and user from response
     const token = data?.data?.authorization?.token;
     const user = data?.data?.user;
 
@@ -52,7 +49,6 @@ export async function POST(req) {
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });
 
-    // Optionally set user info cookies (if needed by your middleware)
     if (user?.id) {
       cookieStore.set("ID", user.id.toString(), {
         httpOnly: true,

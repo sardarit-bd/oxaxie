@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { Scale, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { apiFetch } from '../../../lib/api';
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -37,28 +36,51 @@ export default function SignupPage() {
         throw new Error("Server returned an invalid response. Please try again.");
       }
 
-      console.log(data.message);
-
       if (!response.ok) {
+        data.status = response.status;
         throw data;
       }
 
-      // Success - redirect to dashboard
+      console.log("User registered successfully!");
+
+      // Redirect to dashboard
       router.push("/dashboard");
 
     } catch (err) {
       console.error('Signup error:', err);
       
-      if (err.status === 422) {
-        const errors = err.errors || {};
-        const messages = Object.values(errors).flat();
-        setError(messages[0] || 'Please check your input.');
-      } else if (err.status === 409 || err.message?.toLowerCase().includes('already')) {
+      // Handle validation errors (422)
+      if (err.status === 422 && err.errors) {
+        // Extract all error messages from the errors object
+        const errorMessages = [];
+        
+        for (const field in err.errors) {
+          if (Array.isArray(err.errors[field])) {
+            errorMessages.push(...err.errors[field]);
+          } else if (typeof err.errors[field] === 'string') {
+            errorMessages.push(err.errors[field]);
+          }
+        }
+        
+        // Display all error messages
+        if (errorMessages.length > 0) {
+          setError(errorMessages.join(' '));
+        } else {
+          setError(err.message || 'Please check your input and try again.');
+        }
+        
+      } else if (err.status === 409) {
+        // Conflict - duplicate email
         setError('This email is already registered.');
       } else if (err.status === 503) {
+        // Service unavailable
         setError('Unable to connect to server. Please check your connection and try again.');
+      } else if (err.message) {
+        // Any other error with a message
+        setError(err.message);
       } else {
-        setError(err.message || 'Unable to create account. Please try again.');
+        // Generic fallback
+        setError('Unable to create account. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -97,7 +119,7 @@ export default function SignupPage() {
             </div>
           )}
 
-          {/* Form - CORRECTLY WRAPS ALL FIELDS AND BUTTON */}
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Full Name */}
             <div>
@@ -160,7 +182,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading || !name || !email || !password}
-              className="w-full bg-[#f59e0b] hover:bg-[#ea950a] text-slate-800 font-[560] py-3.5 rounded-lg transition-colors shadow-sm"
+              className="w-full bg-[#f59e0b] hover:bg-[#ea950a] text-slate-800 font-[560] py-3.5 rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Creating Account...' : 'Create Account'}
             </button>

@@ -3,9 +3,8 @@ import { cookies } from 'next/headers';
 
 export async function POST(req) {
   try {
-    // cookies() is async now
     const cookieStore = await cookies();
-    const token = cookieStore.get('authToken')?.value; // ✅ this works now
+    const token = cookieStore.get('authToken')?.value; 
 
     if (!token) {
       return NextResponse.json(
