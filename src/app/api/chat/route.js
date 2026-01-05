@@ -1,89 +1,3 @@
-// import { GoogleGenAI } from "@google/genai";
-// import { NextResponse } from 'next/server';
-
-// const ai = new GoogleGenAI({});
-
-// export async function POST(request) {
-//   try {
-//     const { message, caseData, conversationHistory } = await request.json();
-
-//     console.log('=== Chat API Hit ===');
-//     console.log('Message:', message);
-//     console.log('Case Data:', caseData);
-
-//     if (!message || !message.trim()) {
-//       return NextResponse.json(
-//         { error: 'Message is required' },
-//         { status: 400 }
-//       );
-//     }
-
-//     // Build the conversation context
-//     const systemContext = `You are a helpful legal information assistant. You provide educational legal information to help users understand their rights and options. You are NOT providing legal advice, but rather helping users understand general legal concepts and procedures.
-
-// Case Information:
-// - Issue Type: ${caseData.issue_type}
-// - Location: ${caseData.location_city}, ${caseData.location_state}, ${caseData.location_country}
-// - Situation: ${caseData.situation_description}
-
-// Important Guidelines:
-// - Provide clear, educational information about legal concepts
-// - Help users understand their general rights and options
-// - Suggest documentation and record-keeping practices
-// - Recommend when they should consult with a licensed attorney
-// - Always remind them this is educational information, not legal advice
-// - Be supportive and understanding of their situation
-// - Use simple, clear language
-// - Keep responses concise but comprehensive
-
-// Always conclude responses by asking if they have any questions or if there's anything specific they'd like to explore further.`;
-
-//     // Build conversation history for context
-//     let conversationText = systemContext + '\n\n';
-    
-//     if (conversationHistory && conversationHistory.length > 0) {
-//       // Include last 5 messages for context (to avoid token limits)
-//       const recentHistory = conversationHistory.slice(-5);
-//       recentHistory.forEach(msg => {
-//         conversationText += `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n\n`;
-//       });
-//     }
-    
-//     conversationText += `User: ${message}\n\nAssistant:`;
-
-//     console.log('Sending to Google AI...');
-
-//     const response = await ai.models.generateContent({
-//       model: "gemini-2.5-flash",
-//       contents: conversationText,
-//     });
-
-//     console.log('AI Response received');
-
-//     return NextResponse.json({
-//       success: true,
-//       message: response.text,
-//       timestamp: new Date().toISOString()
-//     });
-
-//   } catch (error) {
-//     console.error('=== ERROR in Chat API ===');
-//     console.error('Error name:', error.name);
-//     console.error('Error message:', error.message);
-//     console.error('Full error:', error);
-    
-//     return NextResponse.json(
-//       { 
-//         error: 'Failed to generate response',
-//         details: error.message,
-//         errorType: error.name
-//       },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
 import { GoogleGenAI } from "@google/genai";
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -123,7 +37,7 @@ export async function POST(request) {
       };
 
       try {
-        const saveUserMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat-messages`, {
+        const saveUserMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/send`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -197,7 +111,7 @@ Always conclude responses by asking if they have any questions or if there's any
       };
 
       try {
-        const saveAiMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat-messages`, {
+        const saveAiMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/send`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,

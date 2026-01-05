@@ -60,63 +60,146 @@ const CaseForm = () => {
     };
   };
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setError('');
+
+  //   if (!selectedIssue) {
+  //     setError('Please select an issue type');
+  //     return;
+  //   }
+
+  //   if (!locationCity || !locationState) {
+  //     setError('Please enter your location in the format: City, State, Country');
+  //     return;
+  //   }
+
+  //   if (!situation.trim()) {
+  //     setError('Please describe your situation');
+  //     return;
+  //   }
+
+  //   setLoading(true);
+
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append('issue_type', selectedIssue);
+  //     formData.append('location_city', locationCity);
+  //     formData.append('location_state', locationState);
+  //     formData.append('location_country', locationCountry || 'US');
+  //     formData.append('situation_description', situation);
+  //     formData.append('status', 'active');
+
+  //     files.forEach((fileObj, index) => {
+  //       formData.append(`documents[${index}]`, fileObj.file);
+  //     });
+
+  //     const response = await fetch('/api/case', {
+  //       method: 'POST',
+  //       credentials: 'include',
+  //       body: formData,
+  //     });
+
+  //     const data = await response.json();
+
+  //     if (!response.ok) {
+  //       throw new Error(data.message || 'Failed to create case');
+  //     }
+
+  //     console.log('Case created:', data);
+  //     router.push(`/case/${data.data.id}`);
+      
+  //   } catch (err) {
+  //     console.error('Error creating case:', err);
+  //     setError(err.message || 'Failed to create case. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError('');
 
-    if (!selectedIssue) {
-      setError('Please select an issue type');
-      return;
+  if (!selectedIssue) {
+    setError('Please select an issue type');
+    return;
+  }
+
+  if (!locationCity || !locationState) {
+    setError('Please enter your location in the format: City, State, Country');
+    return;
+  }
+
+  if (!situation.trim()) {
+    setError('Please describe your situation');
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const formData = new FormData();
+    formData.append('issue_type', selectedIssue);
+    formData.append('location_city', locationCity);
+    formData.append('location_state', locationState);
+    formData.append('location_country', locationCountry || 'US');
+    formData.append('situation_description', situation);
+    formData.append('status', 'active');
+
+    files.forEach((fileObj, index) => {
+      formData.append(`documents[${index}]`, fileObj.file);
+    });
+
+    const response = await fetch('/api/case', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    const data = await response.json();
+
+    console.log('Full API response:', data); // Debug log
+
+    if (!response.ok) {
+      // Handle upgrade required
+      if (data.data?.upgrade_required) {
+        setError(`${data.message}\n\nCurrent plan: ${data.data.current_plan}\nUpgrade to: ${data.data.upgrade_to}`);
+        // TODO: Show upgrade modal instead of error
+        return;
+      }
+      throw new Error(data.message || 'Failed to create case');
     }
 
-    if (!locationCity || !locationState) {
-      setError('Please enter your location in the format: City, State, Country');
-      return;
-    }
-
-    if (!situation.trim()) {
-      setError('Please describe your situation');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('issue_type', selectedIssue);
-      formData.append('location_city', locationCity);
-      formData.append('location_state', locationState);
-      formData.append('location_country', locationCountry || 'US');
-      formData.append('situation_description', situation);
-      formData.append('status', 'active');
-
-      files.forEach((fileObj, index) => {
-        formData.append(`documents[${index}]`, fileObj.file);
+    if (data.success) {
+      const caseId = data.data?.case?.id;
+      
+      console.log('Case created successfully:', {
+        caseId: caseId,
+        fullCase: data.data?.case
       });
 
-      const response = await fetch('/api/case', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to create case');
+      // Verify case ID exists
+      if (!caseId) {
+        console.error('Case ID missing from response:', data);
+        throw new Error('Case created but ID not found in response');
       }
 
-      console.log('Case created:', data);
-      router.push(`/case/${data.data.id}`);
-      
-    } catch (err) {
-      console.error('Error creating case:', err);
-      setError(err.message || 'Failed to create case. Please try again.');
-    } finally {
-      setLoading(false);
+      // Redirect to case page
+      console.log(`Redirecting to /case/${caseId}`);
+      router.push(`/case/${caseId}`);
+    } else {
+      throw new Error(data.message || 'Failed to create case');
     }
-  };
-
+    
+  } catch (err) {
+    console.error('Error creating case:', err);
+    setError(err.message || 'Failed to create case. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
   const handleLocationChange = (e) => {
     const value = e.target.value;
     const parsed = parseLocation(value);
