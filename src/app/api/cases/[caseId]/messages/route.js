@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, context) {
-  // IMPORTANT: Await params in Next.js 15+
+
   const params = await context.params;
   const { caseId } = params;
   
@@ -15,7 +15,7 @@ export async function GET(request, context) {
     console.log('Auth token found:', authToken ? 'Yes' : 'No');
     
     if (!caseId) {
-      console.log('❌ No case ID provided');
+      console.log('No case ID provided');
       return NextResponse.json(
         { success: false, error: 'Case ID is required' },
         { status: 400 }
@@ -23,7 +23,7 @@ export async function GET(request, context) {
     }
     
     if (!authToken) {
-      console.log('❌ No auth token found');
+      console.log('No auth token found');
       return NextResponse.json(
         { success: false, error: 'Not authenticated' },
         { status: 401 }
@@ -48,7 +48,7 @@ export async function GET(request, context) {
     console.log('Laravel raw response:', responseText.substring(0, 500));
     
     if (!response.ok) {
-      console.error('❌ Laravel returned error status:', response.status);
+      console.error('Laravel returned error status:', response.status);
       
       let errorData;
       try {
@@ -64,12 +64,12 @@ export async function GET(request, context) {
     }
 
     const data = JSON.parse(responseText);
-    console.log('✅ Success - Message count:', data.data?.length || 0);
+    console.log('Success - Message count:', data.data?.length || 0);
     
     return NextResponse.json(data);
     
   } catch (error) {
-    console.error('❌ Proxy error:', error);
+    console.error('Proxy error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

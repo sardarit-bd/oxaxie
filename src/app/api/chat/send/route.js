@@ -18,7 +18,6 @@ export async function POST(req) {
     const body = await req.json();
     console.log('Chat request:', body);
 
-    // Call Laravel backend - NEW ENDPOINT
     const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/send`;
     console.log('Calling backend:', backendUrl);
 

@@ -165,7 +165,6 @@ What would you like to explore first? You can ask me anything about your situati
     const userMessage = message.trim();
     setMessage('');
     
-    // Add user message to chat
     const newUserMessage = {
       role: 'user',
       content: userMessage,
@@ -176,14 +175,14 @@ What would you like to explore first? You can ask me anything about your situati
     setIsSending(true);
 
     try {
-      // Call the AI API (which now also saves to database)
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/chat/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
         body: JSON.stringify({
+          all_case_id: caseId,
           message: userMessage,
           caseData: caseData,
           conversationHistory: messages
@@ -191,16 +190,23 @@ What would you like to explore first? You can ask me anything about your situati
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get AI response');
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.message || 'Failed to get AI response');
       }
 
       const data = await response.json();
+      console.log('API Response:', data); // Debug log
+      
+      // ✅ FIX: Extract AI content from correct path
+      const aiContent = data.data?.ai_message?.content || data.message || 'No response received';
+      const aiTimestamp = data.data?.ai_message?.created_at || new Date().toISOString();
       
       // Add AI response to chat
       const aiMessage = {
         role: 'assistant',
-        content: data.message,
-        timestamp: data.timestamp
+        content: aiContent,  // ✅ Now uses actual AI response
+        timestamp: aiTimestamp
       };
       
       setMessages(prev => [...prev, aiMessage]);
@@ -221,7 +227,6 @@ What would you like to explore first? You can ask me anything about your situati
       setIsSending(false);
     }
   };
-
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
