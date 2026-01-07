@@ -44,6 +44,15 @@ export default function DashboardNavbar({ isLoggedIn = false, userName = null })
                                         Pricing
                                     </button>
                                 </Link>
+
+                                <Link href="/profile">
+                                    <button 
+                                    onClick={() => router.push('/profile')}
+                                    className="text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors cursor-pointer"
+                                    >
+                                        Profile
+                                    </button>
+                                </Link>
                                 <button 
                                     onClick={handleSignOut}
                                     className="flex items-center gap-2 text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors hover:bg-[#FFA70A] px-3 py-2 rounded-xl font-semibold cursor-pointer"

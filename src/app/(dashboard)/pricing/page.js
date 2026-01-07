@@ -99,12 +99,10 @@ export default function PricingPage() {
 
   const handlePlanSelect = (plan) => {
     if (plan.type === 'free') {
-      // Handle free plan - already have free tier from signup
       router.push('/dashboard');
       return;
     }
 
-    // Open payment modal for paid plans
     setSelectedPlan(plan);
     setShowPaymentModal(true);
   };

@@ -1,4 +1,6 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { FlashProvider } from '../context/FlashContext';
+import FlashMessage from '../components/FlashMessage';
 import "./globals.css";
 
 
@@ -31,7 +33,10 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased bg-white text-black`}
       >
-        {children}
+        <FlashProvider>
+          <FlashMessage />
+          {children}
+        </FlashProvider>
 
       </body>
     </html>

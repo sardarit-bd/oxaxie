@@ -298,8 +298,7 @@ export default function CaseChat() {
         console.error('Message fetch error:', msgError);
         console.error('Error stack:', msgError.stack);
       }
-      
-      // If we get here, show only initial message (no history found)
+ 
       console.log('Showing initial message');
       setMessages([{
         role: 'assistant',
@@ -391,7 +390,7 @@ What would you like to explore first? You can ask me anything about your situati
         message: userMessage,
         caseData: caseData,
         conversationHistory: messages,
-        caseDocuments: caseDocuments // Pass uploaded documents
+        caseDocuments: caseDocuments
       }),
     });
 
