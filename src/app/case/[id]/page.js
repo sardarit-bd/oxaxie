@@ -20,6 +20,7 @@ export default function CaseChat() {
   const messagesEndRef = useRef(null);
 
   const [documents, setDocuments] = useState([]);
+  const [caseDocuments, setCaseDocuments] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Fetch documents when switching to documents tab
@@ -190,6 +191,43 @@ export default function CaseChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const fetchCaseDocuments = async () => {
+    try {
+      console.log('=== Fetching Case Documents ===');
+      console.log('Case ID:', caseId);
+      
+      const response = await fetch(`/api/case/${caseId}/case-documents`, {
+        credentials: 'include'
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Case documents response:', data);
+        
+        if (data.success && data.data) {
+          console.log('Case documents found:', data.data.length);
+          console.log('Documents details:', data.data.map(d => ({
+            id: d.id,
+            name: d.original_name,
+            mime_type: d.mime_type,
+            size: d.file_size,
+            isImage: d.mime_type?.startsWith('image/')
+          })));
+          setCaseDocuments(data.data);
+        } else {
+          console.log('No case documents in response');
+          setCaseDocuments([]);
+        }
+      } else {
+        console.error('Failed to fetch case documents, status:', response.status);
+      }
+    } catch (error) {
+      console.error('Error fetching case documents:', error);
+    }
+  };
+
   const fetchCaseData = async () => {
     try {
       setLoading(true);
@@ -206,6 +244,8 @@ export default function CaseChat() {
       const result = await response.json();
       const data = result.data || result;
       setCaseData(data);
+
+      await fetchCaseDocuments();
       
       try {
         const messagesResponse = await fetch(`/api/cases/${caseId}/messages`, {
@@ -314,75 +354,84 @@ What would you like to explore first? You can ask me anything about your situati
     return types[issueType] || issueType.replace(/_/g, ' ');
   };
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault();
-    
-    if (!message.trim() || isSending) return;
 
-    const userMessage = message.trim();
-    setMessage('');
+
+  const handleSendMessage = async (e) => {
+  e.preventDefault();
+  
+  if (!message.trim() || isSending) return;
+
+  const userMessage = message.trim();
+  setMessage('');
+  
+  const newUserMessage = {
+    role: 'user',
+    content: userMessage,
+    timestamp: new Date().toISOString()
+  };
+  
+  setMessages(prev => [...prev, newUserMessage]);
+  setIsSending(true);
+
+  try {
+    console.log('=== Sending Message to AI ===');
+    console.log('Message:', userMessage);
+    console.log('Case Documents:', caseDocuments);
+    console.log('Number of documents:', caseDocuments?.length || 0);
+    console.log('Image documents:', caseDocuments?.filter(d => d.mime_type?.startsWith('image/')));
     
-    const newUserMessage = {
-      role: 'user',
-      content: userMessage,
-      timestamp: new Date().toISOString()
+    const response = await fetch('/api/chat/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        all_case_id: caseId,
+        message: userMessage,
+        caseData: caseData,
+        conversationHistory: messages,
+        caseDocuments: caseDocuments // Pass uploaded documents
+      }),
+    });
+
+    console.log('Chat API response status:', response.status);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API Error:', errorData);
+      throw new Error(errorData.message || 'Failed to get AI response');
+    }
+
+    const data = await response.json();
+    console.log('API Response:', data); 
+    
+    const aiContent = data.data?.ai_message?.content || data.message || 'No response received';
+    const aiTimestamp = data.data?.ai_message?.created_at || new Date().toISOString();
+    
+    const aiMessage = {
+      role: 'assistant',
+      content: aiContent,  
+      timestamp: aiTimestamp
     };
     
-    setMessages(prev => [...prev, newUserMessage]);
-    setIsSending(true);
-
-    try {
-      const response = await fetch('/api/chat/send', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          all_case_id: caseId,
-          message: userMessage,
-          caseData: caseData,
-          conversationHistory: messages
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error:', errorData);
-        throw new Error(errorData.message || 'Failed to get AI response');
-      }
-
-      const data = await response.json();
-      console.log('API Response:', data); 
-      
-      const aiContent = data.data?.ai_message?.content || data.message || 'No response received';
-      const aiTimestamp = data.data?.ai_message?.created_at || new Date().toISOString();
-      
-      // Add AI response to chat
-      const aiMessage = {
-        role: 'assistant',
-        content: aiContent,  
-        timestamp: aiTimestamp
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      
-    } catch (err) {
-      console.error('Error sending message:', err);
-      
-      // Add error message
-      const errorMessage = {
-        role: 'assistant',
-        content: 'I apologize, but I encountered an error processing your message. Please try again.',
-        timestamp: new Date().toISOString(),
-        isError: true
-      };
-      
-      setMessages(prev => [...prev, errorMessage]);
-    } finally {
-      setIsSending(false);
-    }
-  };
+    setMessages(prev => [...prev, aiMessage]);
+    
+  } catch (err) {
+    console.error('Error sending message:', err);
+    
+    const errorMessage = {
+      role: 'assistant',
+      content: 'I apologize, but I encountered an error processing your message. Please try again.',
+      timestamp: new Date().toISOString(),
+      isError: true
+    };
+    
+    setMessages(prev => [...prev, errorMessage]);
+  } finally {
+    setIsSending(false);
+  }
+};
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

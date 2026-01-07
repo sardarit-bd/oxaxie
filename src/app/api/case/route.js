@@ -16,20 +16,8 @@ export async function POST(req) {
 
     const formData = await req.formData();
     
-    // Debug: Log what we received
-    console.log('=== Received from frontend ===');
-    for (let [key, value] of formData.entries()) {
-      if (value instanceof File) {
-        console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
-      } else {
-        console.log(`${key}: ${value}`);
-      }
-    }
-
-    // Create form-data instance for Node.js
     const backendFormData = new FormData();
     
-    // Append regular fields
     backendFormData.append('issue_type', formData.get('issue_type'));
     backendFormData.append('location_city', formData.get('location_city'));
     backendFormData.append('location_state', formData.get('location_state'));
@@ -37,7 +25,6 @@ export async function POST(req) {
     backendFormData.append('situation_description', formData.get('situation_description'));
     backendFormData.append('status', formData.get('status'));
 
-    // Handle files
     let filesAppended = 0;
     let index = 0;
     
@@ -46,16 +33,11 @@ export async function POST(req) {
       if (!file) break;
       
       if (file instanceof File && file.size > 0) {
-        console.log(`Processing file ${index}:`, file.name, file.size, file.type);
-        
-        // Convert File to Buffer for form-data
         const buffer = Buffer.from(await file.arrayBuffer());
-        
         backendFormData.append(`documents[${index}]`, buffer, {
           filename: file.name,
           contentType: file.type,
         });
-        
         filesAppended++;
       }
       index++;
@@ -78,13 +60,24 @@ export async function POST(req) {
     );
 
     const data = await response.json();
-    console.log('Backend response:', response.status, JSON.stringify(data, null, 2));
+    console.log('Backend response:', response.status, data);
 
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+    if (!response.ok && data.errors?.upgrade_required) {
+      console.log('Transforming upgrade error response');
+      return NextResponse.json({
+        success: false,
+        message: data.message,
+        data: {
+          upgrade_required: data.errors.upgrade_required,
+          current_plan: data.errors.current_plan,
+          upgrade_to: data.errors.upgrade_to,
+          limit_details: data.errors.limit_details
+        }
+      }, { status: response.status });
     }
 
-    return NextResponse.json(data);
+
+    return NextResponse.json(data, { status: response.status });
 
   } catch (error) {
     console.error("Error creating case:", error);
