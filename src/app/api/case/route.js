@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import FormData from "form-data";
 
 export async function POST(req) {
   try {
@@ -15,7 +16,20 @@ export async function POST(req) {
 
     const formData = await req.formData();
     
+    // Debug: Log what we received
+    console.log('=== Received from frontend ===');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}: File - ${value.name} (${value.size} bytes, ${value.type})`);
+      } else {
+        console.log(`${key}: ${value}`);
+      }
+    }
+
+    // Create form-data instance for Node.js
     const backendFormData = new FormData();
+    
+    // Append regular fields
     backendFormData.append('issue_type', formData.get('issue_type'));
     backendFormData.append('location_city', formData.get('location_city'));
     backendFormData.append('location_state', formData.get('location_state'));
@@ -23,13 +37,31 @@ export async function POST(req) {
     backendFormData.append('situation_description', formData.get('situation_description'));
     backendFormData.append('status', formData.get('status'));
 
-    const files = formData.getAll('documents[]');
-    files.forEach((file, index) => {
-      if (file.size > 0) {
-        backendFormData.append(`documents[${index}]`, file);
+    // Handle files
+    let filesAppended = 0;
+    let index = 0;
+    
+    while (true) {
+      const file = formData.get(`documents[${index}]`);
+      if (!file) break;
+      
+      if (file instanceof File && file.size > 0) {
+        console.log(`Processing file ${index}:`, file.name, file.size, file.type);
+        
+        // Convert File to Buffer for form-data
+        const buffer = Buffer.from(await file.arrayBuffer());
+        
+        backendFormData.append(`documents[${index}]`, buffer, {
+          filename: file.name,
+          contentType: file.type,
+        });
+        
+        filesAppended++;
       }
-    });
+      index++;
+    }
 
+    console.log(`Total files appended: ${filesAppended}`);
     console.log('Sending to backend:', `${process.env.NEXT_PUBLIC_API_BASE_URL}/case`);
 
     const response = await fetch(
@@ -39,13 +71,14 @@ export async function POST(req) {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Accept": "application/json",
+          ...backendFormData.getHeaders(),
         },
-        body: backendFormData,
+        body: backendFormData.getBuffer(),
       }
     );
 
     const data = await response.json();
-    console.log('Backend response:', response.status, data);
+    console.log('Backend response:', response.status, JSON.stringify(data, null, 2));
 
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });

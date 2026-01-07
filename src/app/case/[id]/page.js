@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Scale, ArrowLeft, Send, Bot, FileText, Plus, User } from 'lucide-react';
+import { Scale, ArrowLeft, Send, Bot, FileText, Plus, User, Download, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -18,6 +18,163 @@ export default function CaseChat() {
   const [messages, setMessages] = useState([]);
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
+
+  const [documents, setDocuments] = useState([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Fetch documents when switching to documents tab
+  useEffect(() => {
+    if (caseId && activeTab === 'documents') {
+      console.log('Tab switched to documents, fetching...');
+      fetchDocuments();
+    }
+  }, [caseId, activeTab]);
+
+  const fetchDocuments = async () => {
+  try {
+    console.log('=== Fetching Documents ===');
+    console.log('Case ID:', caseId);
+    
+    const response = await fetch(`/api/cases/${caseId}/documents`, {
+      credentials: 'include'
+    });
+    
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+    
+    // Get raw text first to debug
+    const text = await response.text();
+    console.log('Raw response text:', text);
+    
+    // Parse JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Failed to parse JSON:', e);
+      console.error('Response was:', text);
+      setDocuments([]);
+      return;
+    }
+    
+    console.log('Parsed data:', data);
+    console.log('Data structure:', {
+      success: data.success,
+      hasData: !!data.data,
+      hasDocuments: !!data.data?.documents,
+      documentsType: typeof data.data?.documents,
+      isArray: Array.isArray(data.data?.documents)
+    });
+    
+    // Check different possible response structures
+    if (response.ok && data.success) {
+      let docs = [];
+      
+      // Try different paths where documents might be
+      if (data.data?.documents) {
+        docs = data.data.documents;
+      } else if (data.documents) {
+        docs = data.documents;
+      } else if (Array.isArray(data.data)) {
+        docs = data.data;
+      }
+      
+      console.log('Extracted documents:', docs);
+      console.log('Document count:', docs.length);
+      
+      if (docs.length > 0) {
+        console.log('First document:', docs[0]);
+      }
+      
+      setDocuments(docs);
+    } else {
+      console.error('Failed to fetch documents:', data);
+      setDocuments([]);
+    }
+  } catch (error) {
+    console.error('Error fetching documents:', error);
+    console.error('Error stack:', error.stack);
+    setDocuments([]);
+  }
+};
+
+
+  const handleGenerateDocument = async (documentType) => {
+  if (isGenerating) return;
+  
+  console.log('=== Document Generation Debug ===');
+  console.log('Case ID:', caseId);
+  console.log('Document Type:', documentType);
+  
+  setIsGenerating(true);
+
+  try {
+    const response = await fetch('/api/documents/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        all_case_id: caseId,
+        document_type: documentType
+      })
+    });
+
+    const data = await response.json();
+    console.log('Generate document response:', data);
+
+    if (!response.ok) {
+      if (data.upgrade_required) {
+        alert(`${data.message}\nPlease upgrade to ${data.upgrade_to} plan.`);
+      } else {
+        alert(data.message || 'Failed to generate document');
+      }
+      setIsGenerating(false);
+      return;
+    }
+
+    if (data.success) {
+      setActiveTab('documents');
+      
+      setTimeout(() => {
+        fetchDocuments();
+      }, 100);
+      
+      alert('Document generated successfully!');
+    }
+  } catch (error) {
+    console.error('Error generating document:', error);
+    alert('Failed to generate document. Please try again.');
+  } finally {
+    setIsGenerating(false);
+  }
+};
+  const handleDeleteDocument = async (documentId) => {
+    if (!confirm('Are you sure you want to delete this document?')) return;
+    
+    try {
+      const response = await fetch(`/api/documents/${documentId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        await fetchDocuments();
+        alert('Document deleted successfully');
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+    }
+  };
+
+  const handleDownloadDocument = (document) => {
+    const blob = new Blob([document.content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = window.document.createElement('a');
+    a.href = url;
+    a.download = `${document.name.replace(/ /g, '_')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     if (caseId) {
@@ -125,9 +282,9 @@ export default function CaseChat() {
 ${data.situation_description}
 
 **Key Legal Considerations:**
-• Your rights are protected under local and state laws in ${data.location_state}
-• Documentation is crucial - keep records of all communications
-• Time limits may apply, so acting promptly is important
+- Your rights are protected under local and state laws in ${data.location_state}
+- Documentation is crucial - keep records of all communications
+- Time limits may apply, so acting promptly is important
 
 **Recommended Next Steps:**
 1. Gather all relevant documents and evidence
@@ -136,10 +293,10 @@ ${data.situation_description}
 4. Research local legal aid resources if needed
 
 **How I Can Help:**
-• Answer specific questions about your rights
-• Help you understand your legal options
-• Generate formal documents like demand letters or notices
-• Explain relevant laws and procedures
+- Answer specific questions about your rights
+- Help you understand your legal options
+- Generate formal documents like demand letters or notices
+- Explain relevant laws and procedures
 
 What would you like to explore first? You can ask me anything about your situation, or I can help you draft a formal document.`;
   };
@@ -196,16 +353,15 @@ What would you like to explore first? You can ask me anything about your situati
       }
 
       const data = await response.json();
-      console.log('API Response:', data); // Debug log
+      console.log('API Response:', data); 
       
-      // ✅ FIX: Extract AI content from correct path
       const aiContent = data.data?.ai_message?.content || data.message || 'No response received';
       const aiTimestamp = data.data?.ai_message?.created_at || new Date().toISOString();
       
       // Add AI response to chat
       const aiMessage = {
         role: 'assistant',
-        content: aiContent,  // ✅ Now uses actual AI response
+        content: aiContent,  
         timestamp: aiTimestamp
       };
       
@@ -227,6 +383,7 @@ What would you like to explore first? You can ask me anything about your situati
       setIsSending(false);
     }
   };
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -301,7 +458,7 @@ What would you like to explore first? You can ask me anything about your situati
                   : 'border-transparent text-gray-600 hover:text-gray-900'
               }`}
             >
-              Documents (0)
+              Documents ({documents.length})
             </button>
           </div>
 
@@ -376,28 +533,87 @@ What would you like to explore first? You can ask me anything about your situati
                 <div className="mb-6">
                   <h2 className="text-sm md:text-base font-semibold mb-4">Generate a Document</h2>
                   <div className="flex flex-wrap gap-2">
-                    <button className="flex items-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
+                    <button
+                      onClick={() => handleGenerateDocument('demand_letter')}
+                      disabled={isGenerating}
+                      className="flex items-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                    >
                       <Plus className="w-3 h-3 md:w-4 md:h-4" />
-                      Demand Letter
+                      {isGenerating ? 'Generating...' : 'Demand Letter'}
                     </button>
-                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
+                    <button 
+                      onClick={() => handleGenerateDocument('formal_notice')}
+                      disabled={isGenerating}
+                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                    >
                       Formal Notice
                     </button>
-                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
+                    <button 
+                      onClick={() => handleGenerateDocument('response_letter')}
+                      disabled={isGenerating}
+                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                    >
                       Response Letter
                     </button>
-                    <button className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] cursor-pointer">
+                    <button 
+                      onClick={() => handleGenerateDocument('cease_desist')}
+                      disabled={isGenerating}
+                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                    >
                       Cease & Desist
                     </button>
                   </div>
+                  {isGenerating && (
+                    <p className="mt-3 text-sm text-gray-600">Generating document...</p>
+                  )}
                 </div>
 
-                <div className="border-t border-gray-200 pt-6">
+                <div className="border-t border-gray-200 py-6">
                   <h2 className="text-sm md:text-base font-semibold mb-4">Your Documents</h2>
-                  <div className="flex flex-col items-center justify-center py-12 md:py-20">
-                    <FileText className="w-10 h-10 md:w-12 md:h-12 text-gray-400 mb-3" />
-                    <p className="text-gray-500 text-xs md:text-sm">No documents yet</p>
-                  </div>
+                  {documents.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 md:py-20">
+                      <FileText className="w-10 h-10 md:w-12 md:h-12 text-gray-400 mb-3" />
+                      <p className="text-gray-500 text-xs md:text-sm">No documents yet</p>
+                      <p className="text-gray-400 text-xs mt-1">Generate your first document above</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {documents.map(doc => (
+                        <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <FileText className="w-5 h-5 text-gray-600" />
+                                <h3 className="font-semibold text-sm">{doc.name}</h3>
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Created {new Date(doc.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleDownloadDocument(doc)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                title="Download"
+                              >
+                                <Download className="w-4 h-4 text-gray-600" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteDocument(doc.id)}
+                                className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="w-4 h-4 text-red-600 cursor-pointer" />
+                              </button>
+                            </div>
+                          </div>
+                          <div className="mt-3 p-3 bg-gray-50 rounded text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
+                            {doc.content.substring(0, 300)}...
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
