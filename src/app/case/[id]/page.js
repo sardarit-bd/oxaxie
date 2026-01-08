@@ -584,7 +584,7 @@ What would you like to explore first? You can ask me anything about your situati
                     <button
                       onClick={() => handleGenerateDocument('demand_letter')}
                       disabled={isGenerating}
-                      className="flex items-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                      className="flex items-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
                     >
                       <Plus className="w-3 h-3 md:w-4 md:h-4" />
                       {isGenerating ? 'Generating...' : 'Demand Letter'}
@@ -592,21 +592,21 @@ What would you like to explore first? You can ask me anything about your situati
                     <button 
                       onClick={() => handleGenerateDocument('formal_notice')}
                       disabled={isGenerating}
-                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
                     >
                       Formal Notice
                     </button>
                     <button 
                       onClick={() => handleGenerateDocument('response_letter')}
                       disabled={isGenerating}
-                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
                     >
                       Response Letter
                     </button>
                     <button 
                       onClick={() => handleGenerateDocument('cease_desist')}
                       disabled={isGenerating}
-                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#F59F0A] hover:text-white cursor-pointer disabled:opacity-50"
+                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
                     >
                       Cease & Desist
                     </button>

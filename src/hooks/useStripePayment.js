@@ -83,23 +83,6 @@ export const useStripePayment = () => {
     }
   };
 
-  // const verifyPayment = async (paymentId, paymentIntentId) => {
-  //   try {
-  //     const response = await paymentService.verifyPayment(paymentId, {
-  //       payment_intent_id: paymentIntentId,
-  //     });
-
-  //     if (!response.success) {
-  //       throw new Error(response.message || 'Payment verification failed');
-  //     }
-
-  //     return response.data;
-  //   } catch (err) {
-  //     console.error('Payment verification error:', err);
-  //     throw err;
-  //   }
-  // };
-
 
 const verifyPayment = async (paymentId, paymentIntentId, plan, userId) => {
   try {

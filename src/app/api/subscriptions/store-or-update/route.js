@@ -20,9 +20,27 @@ export async function POST(req) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
       },
       body: JSON.stringify(body),
     });
+
+    const contentType = res.headers.get('content-type');
+    
+    if (!contentType || !contentType.includes('application/json')) {
+  
+      const text = await res.text();
+      console.error('Laravel returned HTML instead of JSON:', text.substring(0, 500));
+      
+      return NextResponse.json(
+        { 
+          success: false, 
+          message: 'Server error occurred. Check Laravel logs for details.',
+          error: 'Non-JSON response from server'
+        },
+        { status: 500 }
+      );
+    }
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
@@ -30,7 +48,7 @@ export async function POST(req) {
   } catch (err) {
     console.error('Subscription store/update error:', err);
     return NextResponse.json(
-      { success: false, message: 'Internal server error' },
+      { success: false, message: err.message || 'Internal server error' },
       { status: 500 }
     );
   }

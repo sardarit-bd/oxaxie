@@ -129,7 +129,7 @@ export default function Profile() {
       {/* Navigation / Header */}
       <div className="max-w-6xl mx-auto px-6 py-8">
         <Link href="/dashboard">
-          <button className="flex items-center text-sm text-gray-500 hover:text-gray-900 transition-colors mb-8">
+          <button className="flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors mb-8 cursor-pointer">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to dashboard
           </button>
