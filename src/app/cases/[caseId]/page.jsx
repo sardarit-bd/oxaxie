@@ -1,4 +1,3 @@
-// app/cases/[caseId]/page.jsx
 'use client';
 
 import { PaymentInitializer } from '@/components/payments/PaymentInitializer';

@@ -162,7 +162,7 @@ export default function TestPaymentsPage() {
         <div className="text-sm space-y-1 text-muted-foreground">
           <p>API URL: {process.env.NEXT_PUBLIC_API_URL || 'Not set'}</p>
           <p>Current Case ID: {testCaseId}</p>
-          <p>Auth Token: {typeof window !== 'undefined' && localStorage.getItem('auth_token') ? 'Present' : 'Missing'}</p>
+          <p>Auth Token: {typeof window !== 'undefined' && localStorage.getItem('authToken') ? 'Present' : 'Missing'}</p>
         </div>
       </Card>
     </div>

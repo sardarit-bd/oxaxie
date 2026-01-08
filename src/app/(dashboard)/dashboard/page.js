@@ -204,23 +204,36 @@ export default function Dashboard() {
                                             {truncateText(caseItem.situation_description, 100)}
                                         </h3>
 
-                                        {/* Case Meta Info */}
-                                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                                            <div className="flex items-center gap-1.5">
-                                                <MessageSquare size={16} className="text-gray-400" />
-                                                <span>{caseItem.location_city}, {caseItem.location_state}</span>
+                                        {/* Case Meta Info + Response Feedback Link */}
+                                        <div className="flex items-center justify-between text-sm text-gray-600">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-1.5">
+                                                    <MessageSquare size={16} className="text-gray-400" />
+                                                    <span>{caseItem.location_city}, {caseItem.location_state}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock size={16} className="text-gray-400" />
+                                                    <span>{formatDate(caseItem.created_at)}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center gap-1.5">
-                                                <Clock size={16} className="text-gray-400" />
-                                                <span>{formatDate(caseItem.created_at)}</span>
-                                            </div>
+                                            
+                                            <a 
+                                                href={`/feedback/${caseItem.id}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    console.log('Feedback link clicked');
+                                                }}
+                                                className="text-gray-600 hover:text-blue-800 font-medium hover:underline"
+                                            >
+                                                Response Feedback
+                                            </a>
                                         </div>
                                     </div>
 
                                     {/* Arrow Icon */}
                                     <ChevronRight 
                                         size={20} 
-                                        className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0 mt-1"
+                                        className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0 mt-1 ml-4"
                                     />
                                 </div>
                             </div>
