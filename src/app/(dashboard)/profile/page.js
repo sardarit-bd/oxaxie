@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Check, LogOut, Zap, MessageSquare, FileText, User, Minus, Info, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, LogOut, Zap, Briefcase, FileText, User, Minus, Info, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -29,8 +29,7 @@ export default function Profile() {
 
         const data = await response.json();
         console.log('Auth response data:', data);
-        
-        // Handle the nested response structure: data.user.data
+
         const userData = data.user?.data || data.data;
         
         if (data.success && userData) {
@@ -77,7 +76,7 @@ export default function Profile() {
     { category: "Support", name: "Response Time", free: "Standard", pro: "24 Hours", proPlus: "Priority" },
   ];
 
-  // Helper function to format plan tier
+
   const formatPlanTier = (tier) => {
     if (!tier) return 'Free';
     const planMap = {
@@ -88,13 +87,12 @@ export default function Profile() {
     return planMap[tier] || tier.charAt(0).toUpperCase() + tier.slice(1);
   };
 
-  // Helper function to check if current plan
+
   const isCurrentPlan = (planTier) => {
     const currentTier = user?.subscription?.plan_tier || 'free';
     return currentTier === planTier;
   };
 
-  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FBFAF9] flex items-center justify-center">
@@ -106,14 +104,13 @@ export default function Profile() {
     );
   }
 
-  // Don't render content if not authenticated (will redirect)
   if (!isAuthenticated || !user) {
     return null;
   }
 
-  // Calculate usage percentages
-  const messagesPercentage = user.usage?.messages_limit > 0 
-    ? (user.usage.messages_used / user.usage.messages_limit) * 100 
+  // Calculate usage percentages - NOW USING CASES
+  const casesPercentage = user.usage?.cases_limit > 0 
+    ? (user.usage.cases_used / user.usage.cases_limit) * 100 
     : 0;
   
   const documentsPercentage = user.usage?.documents_limit > 0 
@@ -155,36 +152,29 @@ export default function Profile() {
                   </div>
                 </div>
               </div>
-              {/* <button 
-                onClick={handleLogout}
-                className="flex items-center text-red-600 text-sm font-medium hover:text-red-700 transition-colors mt-4 md:mt-0 cursor-pointer"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </button> */}
             </div>
 
-            {/* Usage Stats */}
+            {/* Usage Stats - NOW SHOWING CASES */}
             <div className="px-0 md:px-8 py-4 md:py-0">
                <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Usage Statistics</h2>
                
-               {/* Messages */}
+               {/* Cases */}
                <div className="mb-4">
                  <div className="flex justify-between text-sm mb-1">
                    <span className="flex items-center gap-2 text-gray-600">
-                     <MessageSquare className="w-3 h-3"/> Messages
+                     <Briefcase className="w-3 h-3"/> Cases
                    </span>
                    <span className="font-medium">
-                     {user.usage?.messages_used || 0} / {user.usage?.messages_limit === -1 ? '∞' : (user.usage?.messages_limit || 10)}
+                     {user.usage?.cases_used || 0} / {user.usage?.cases_limit === -1 ? '∞' : (user.usage?.cases_limit || 0)}
                    </span>
                  </div>
                  <div className="w-full bg-gray-100 rounded-full h-2">
                    <div 
                      className={`h-2 rounded-full transition-all duration-300 ${
-                       messagesPercentage >= 90 ? 'bg-red-500' : 
-                       messagesPercentage >= 70 ? 'bg-orange-400' : 'bg-orange-400'
+                       casesPercentage >= 90 ? 'bg-red-500' : 
+                       casesPercentage >= 70 ? 'bg-orange-400' : 'bg-orange-400'
                      }`}
-                     style={{ width: `${Math.min(messagesPercentage, 100)}%` }}
+                     style={{ width: `${Math.min(casesPercentage, 100)}%` }}
                    ></div>
                  </div>
                </div>
@@ -239,13 +229,14 @@ export default function Profile() {
               </div>
               
               {currentPlan !== 'pro_plus' && (
-                <button 
-                  onClick={() => document.getElementById('plans')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="mt-6 md:mt-0 w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-2.5 px-4 rounded-lg hover:bg-black transition-colors text-sm font-medium shadow-lg shadow-gray-200 cursor-pointer"
-                >
-                  <Zap className="w-4 h-4 text-orange-400" fill="currentColor" />
-                  {currentPlan === 'free' ? 'Upgrade to Pro' : 'Upgrade to Pro Plus'}
-                </button>
+                <Link href="/pricing">
+                  <button 
+                    className="mt-6 md:mt-0 w-full flex items-center justify-center gap-2 bg-gray-900 text-white py-2.5 px-4 rounded-lg hover:bg-black transition-colors text-sm font-medium shadow-lg shadow-gray-200 cursor-pointer"
+                  >
+                    <Zap className="w-4 h-4 text-orange-400" fill="currentColor" />
+                    {currentPlan === 'free' ? 'Upgrade to Pro' : 'Upgrade to Pro Plus'}
+                  </button>
+                </Link>
               )}
             </div>
           </div>
@@ -293,16 +284,18 @@ export default function Profile() {
                     <h3 className="text-xl font-serif text-gray-900 mt-2">Pro</h3>
                     <div className="mt-2 text-3xl font-bold font-sans text-gray-900">$9</div>
                     <p className="text-xs text-gray-500 mt-1">/month</p>
-                    <button 
-                      disabled={isCurrentPlan('pro')}
-                      className={`mt-4 w-full py-2 rounded-lg text-sm font-medium shadow-sm ${
-                        isCurrentPlan('pro')
-                          ? 'bg-green-500 text-white cursor-default'
-                          : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
-                      }`}
-                    >
-                      {isCurrentPlan('pro') ? 'Current' : 'Start Pro'}
-                    </button>
+                    <Link href="/pricing">
+                      <button 
+                        disabled={isCurrentPlan('pro')}
+                        className={`mt-4 w-full py-2 rounded-lg text-sm font-medium shadow-sm ${
+                          isCurrentPlan('pro')
+                            ? 'bg-green-500 text-white cursor-default'
+                            : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
+                        }`}
+                      >
+                        {isCurrentPlan('pro') ? 'Current' : 'Start Pro'}
+                      </button>
+                    </Link>
                   </th>
 
                   {/* Pro Plus Header */}
@@ -310,16 +303,18 @@ export default function Profile() {
                     <h3 className="text-xl font-serif text-gray-900">Pro Plus</h3>
                     <div className="mt-2 text-3xl font-bold font-sans">$29</div>
                     <p className="text-xs text-gray-500 mt-1">/month</p>
-                    <button 
-                      disabled={isCurrentPlan('pro_plus')}
-                      className={`mt-4 w-full py-2 border rounded-lg text-sm font-medium ${
-                        isCurrentPlan('pro_plus')
-                          ? 'border-green-500 bg-green-500 text-white cursor-default'
-                          : 'border-gray-900 bg-gray-900 text-white hover:bg-black cursor-pointer'
-                      }`}
-                    >
-                      {isCurrentPlan('pro_plus') ? 'Current' : 'Go Pro Plus'}
-                    </button>
+                    <Link href="/pricing">
+                      <button 
+                        disabled={isCurrentPlan('pro_plus')}
+                        className={`mt-4 w-full py-2 border rounded-lg text-sm font-medium ${
+                          isCurrentPlan('pro_plus')
+                            ? 'border-green-500 bg-green-500 text-white cursor-default'
+                            : 'border-gray-900 bg-gray-900 text-white hover:bg-black cursor-pointer'
+                        }`}
+                      >
+                        {isCurrentPlan('pro_plus') ? 'Current' : 'Go Pro Plus'}
+                      </button>
+                    </Link>
                   </th>
                 </tr>
               </thead>

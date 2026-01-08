@@ -32,123 +32,108 @@ export default function CaseChat() {
   }, [caseId, activeTab]);
 
   const fetchDocuments = async () => {
-  try {
-    console.log('=== Fetching Documents ===');
-    console.log('Case ID:', caseId);
-    
-    const response = await fetch(`/api/cases/${caseId}/documents`, {
-      credentials: 'include'
-    });
-    
-    console.log('Response status:', response.status);
-    console.log('Response ok:', response.ok);
-    
-    // Get raw text first to debug
-    const text = await response.text();
-    console.log('Raw response text:', text);
-    
-    // Parse JSON
-    let data;
     try {
-      data = JSON.parse(text);
-    } catch (e) {
-      console.error('Failed to parse JSON:', e);
-      console.error('Response was:', text);
-      setDocuments([]);
-      return;
-    }
-    
-    console.log('Parsed data:', data);
-    console.log('Data structure:', {
-      success: data.success,
-      hasData: !!data.data,
-      hasDocuments: !!data.data?.documents,
-      documentsType: typeof data.data?.documents,
-      isArray: Array.isArray(data.data?.documents)
-    });
-    
-    // Check different possible response structures
-    if (response.ok && data.success) {
-      let docs = [];
+      console.log('=== Fetching Documents ===');
+      console.log('Case ID:', caseId);
       
-      // Try different paths where documents might be
-      if (data.data?.documents) {
-        docs = data.data.documents;
-      } else if (data.documents) {
-        docs = data.documents;
-      } else if (Array.isArray(data.data)) {
-        docs = data.data;
+      const response = await fetch(`/api/cases/${caseId}/documents`, {
+        credentials: 'include'
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      const text = await response.text();
+      console.log('Raw response text:', text);
+      
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse JSON:', e);
+        console.error('Response was:', text);
+        setDocuments([]);
+        return;
       }
       
-      console.log('Extracted documents:', docs);
-      console.log('Document count:', docs.length);
+      console.log('Parsed data:', data);
       
-      if (docs.length > 0) {
-        console.log('First document:', docs[0]);
+      if (response.ok && data.success) {
+        let docs = [];
+        
+        if (data.data?.documents) {
+          docs = data.data.documents;
+        } else if (data.documents) {
+          docs = data.documents;
+        } else if (Array.isArray(data.data)) {
+          docs = data.data;
+        }
+        
+        console.log('Extracted documents:', docs);
+        console.log('Document count:', docs.length);
+        
+        setDocuments(docs);
+      } else {
+        console.error('Failed to fetch documents:', data);
+        setDocuments([]);
       }
-      
-      setDocuments(docs);
-    } else {
-      console.error('Failed to fetch documents:', data);
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      console.error('Error stack:', error.stack);
       setDocuments([]);
     }
-  } catch (error) {
-    console.error('Error fetching documents:', error);
-    console.error('Error stack:', error.stack);
-    setDocuments([]);
-  }
-};
-
+  };
 
   const handleGenerateDocument = async (documentType) => {
-  if (isGenerating) return;
-  
-  console.log('=== Document Generation Debug ===');
-  console.log('Case ID:', caseId);
-  console.log('Document Type:', documentType);
-  
-  setIsGenerating(true);
+    if (isGenerating) return;
+    
+    console.log('=== Document Generation Debug ===');
+    console.log('Case ID:', caseId);
+    console.log('Document Type:', documentType);
+    
+    setIsGenerating(true);
 
-  try {
-    const response = await fetch('/api/documents/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        all_case_id: caseId,
-        document_type: documentType
-      })
-    });
+    try {
+      const response = await fetch('/api/documents/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          all_case_id: caseId,
+          document_type: documentType
+        })
+      });
 
-    const data = await response.json();
-    console.log('Generate document response:', data);
+      const data = await response.json();
+      console.log('Generate document response:', data);
 
-    if (!response.ok) {
-      if (data.upgrade_required) {
-        alert(`${data.message}\nPlease upgrade to ${data.upgrade_to} plan.`);
-      } else {
-        alert(data.message || 'Failed to generate document');
+      if (!response.ok) {
+        if (data.upgrade_required) {
+          alert(`${data.message}\nPlease upgrade to ${data.upgrade_to} plan.`);
+        } else {
+          alert(data.message || 'Failed to generate document');
+        }
+        setIsGenerating(false);
+        return;
       }
-      setIsGenerating(false);
-      return;
-    }
 
-    if (data.success) {
-      setActiveTab('documents');
-      
-      setTimeout(() => {
-        fetchDocuments();
-      }, 100);
-      
-      alert('Document generated successfully!');
+      if (data.success) {
+        setActiveTab('documents');
+        
+        setTimeout(() => {
+          fetchDocuments();
+        }, 100);
+        
+        alert('Document generated successfully!');
+      }
+    } catch (error) {
+      console.error('Error generating document:', error);
+      alert('Failed to generate document. Please try again.');
+    } finally {
+      setIsGenerating(false);
     }
-  } catch (error) {
-    console.error('Error generating document:', error);
-    alert('Failed to generate document. Please try again.');
-  } finally {
-    setIsGenerating(false);
-  }
-};
+  };
+
   const handleDeleteDocument = async (documentId) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
     
@@ -167,12 +152,58 @@ export default function CaseChat() {
     }
   };
 
+  // UPDATED: Download function with markdown conversion
   const handleDownloadDocument = (document) => {
-    const blob = new Blob([document.content], { type: 'text/plain' });
+    // Convert markdown to plain text by removing markdown syntax
+    let plainText = document.content;
+    
+    // Remove bold/italic markers
+    plainText = plainText.replace(/\*\*\*(.+?)\*\*\*/g, '$1'); // bold+italic
+    plainText = plainText.replace(/\*\*(.+?)\*\*/g, '$1'); // bold
+    plainText = plainText.replace(/\*(.+?)\*/g, '$1'); // italic
+    plainText = plainText.replace(/__(.+?)__/g, '$1'); // bold alternative
+    plainText = plainText.replace(/_(.+?)_/g, '$1'); // italic alternative
+    
+    // Remove headers but keep the text
+    plainText = plainText.replace(/^#{1,6}\s+(.+)$/gm, '$1');
+    
+    // Convert lists - keep the structure but remove markdown
+    plainText = plainText.replace(/^\s*[-*+]\s+/gm, '• '); // bullet lists
+    plainText = plainText.replace(/^\s*(\d+)\.\s+/gm, '$1. '); // numbered lists
+    
+    // Remove blockquote markers
+    plainText = plainText.replace(/^\s*>\s+/gm, '');
+    
+    // Remove horizontal rules
+    plainText = plainText.replace(/^[-*_]{3,}$/gm, '');
+    
+    // Remove code blocks
+    plainText = plainText.replace(/```[\s\S]*?```/g, '');
+    plainText = plainText.replace(/`(.+?)`/g, '$1');
+    
+    // Clean up extra newlines (more than 2 consecutive)
+    plainText = plainText.replace(/\n{3,}/g, '\n\n');
+    
+    const blob = new Blob([plainText], { 
+      type: 'text/plain;charset=utf-8' 
+    });
     const url = URL.createObjectURL(blob);
     const a = window.document.createElement('a');
     a.href = url;
     a.download = `${document.name.replace(/ /g, '_')}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // NEW: Download as markdown (for users who want to edit)
+  const handleDownloadMarkdown = (document) => {
+    const blob = new Blob([document.content], { 
+      type: 'text/markdown;charset=utf-8' 
+    });
+    const url = URL.createObjectURL(blob);
+    const a = window.document.createElement('a');
+    a.href = url;
+    a.download = `${document.name.replace(/ /g, '_')}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -208,13 +239,6 @@ export default function CaseChat() {
         
         if (data.success && data.data) {
           console.log('Case documents found:', data.data.length);
-          console.log('Documents details:', data.data.map(d => ({
-            id: d.id,
-            name: d.original_name,
-            mime_type: d.mime_type,
-            size: d.file_size,
-            isImage: d.mime_type?.startsWith('image/')
-          })));
           setCaseDocuments(data.data);
         } else {
           console.log('No case documents in response');
@@ -265,8 +289,6 @@ export default function CaseChat() {
               timestamp: msg.created_at
             }));
           
-            
-            // Add initial message at the beginning if it's not already there
             const hasInitialMessage = loadedMessages.some(msg => 
               msg.role === 'assistant' && msg.content.includes("I've reviewed your")
             );
@@ -292,11 +314,9 @@ export default function CaseChat() {
         } else {
           const errorData = await messagesResponse.json();
           console.error('Failed to fetch messages:', errorData);
-          console.error('Full error details:', JSON.stringify(errorData, null, 2));
         }
       } catch (msgError) {
         console.error('Message fetch error:', msgError);
-        console.error('Error stack:', msgError.stack);
       }
  
       console.log('Showing initial message');
@@ -353,84 +373,79 @@ What would you like to explore first? You can ask me anything about your situati
     return types[issueType] || issueType.replace(/_/g, ' ');
   };
 
-
-
   const handleSendMessage = async (e) => {
-  e.preventDefault();
-  
-  if (!message.trim() || isSending) return;
-
-  const userMessage = message.trim();
-  setMessage('');
-  
-  const newUserMessage = {
-    role: 'user',
-    content: userMessage,
-    timestamp: new Date().toISOString()
-  };
-  
-  setMessages(prev => [...prev, newUserMessage]);
-  setIsSending(true);
-
-  try {
-    console.log('=== Sending Message to AI ===');
-    console.log('Message:', userMessage);
-    console.log('Case Documents:', caseDocuments);
-    console.log('Number of documents:', caseDocuments?.length || 0);
-    console.log('Image documents:', caseDocuments?.filter(d => d.mime_type?.startsWith('image/')));
+    e.preventDefault();
     
-    const response = await fetch('/api/chat/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({
-        all_case_id: caseId,
-        message: userMessage,
-        caseData: caseData,
-        conversationHistory: messages,
-        caseDocuments: caseDocuments
-      }),
-    });
+    if (!message.trim() || isSending) return;
 
-    console.log('Chat API response status:', response.status);
+    const userMessage = message.trim();
+    setMessage('');
+    
+    const newUserMessage = {
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, newUserMessage]);
+    setIsSending(true);
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('API Error:', errorData);
-      throw new Error(errorData.message || 'Failed to get AI response');
+    try {
+      console.log('=== Sending Message to AI ===');
+      console.log('Message:', userMessage);
+      
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          all_case_id: caseId,
+          message: userMessage,
+          caseData: caseData,
+          conversationHistory: messages,
+          caseDocuments: caseDocuments
+        }),
+      });
+
+      console.log('Chat API response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        throw new Error(errorData.message || 'Failed to get AI response');
+      }
+
+      const data = await response.json();
+      console.log('API Response:', data); 
+      
+      const aiContent = data.data?.ai_message?.content || data.message || 'No response received';
+      const aiTimestamp = data.data?.ai_message?.created_at || new Date().toISOString();
+      
+      const aiMessage = {
+        role: 'assistant',
+        content: aiContent,  
+        timestamp: aiTimestamp
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+    } catch (err) {
+      console.error('Error sending message:', err);
+      
+      const errorMessage = {
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error processing your message. Please try again.',
+        timestamp: new Date().toISOString(),
+        isError: true
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsSending(false);
     }
-
-    const data = await response.json();
-    console.log('API Response:', data); 
-    
-    const aiContent = data.data?.ai_message?.content || data.message || 'No response received';
-    const aiTimestamp = data.data?.ai_message?.created_at || new Date().toISOString();
-    
-    const aiMessage = {
-      role: 'assistant',
-      content: aiContent,  
-      timestamp: aiTimestamp
-    };
-    
-    setMessages(prev => [...prev, aiMessage]);
-    
-  } catch (err) {
-    console.error('Error sending message:', err);
-    
-    const errorMessage = {
-      role: 'assistant',
-      content: 'I apologize, but I encountered an error processing your message. Please try again.',
-      timestamp: new Date().toISOString(),
-      isError: true
-    };
-    
-    setMessages(prev => [...prev, errorMessage]);
-  } finally {
-    setIsSending(false);
-  }
-};
+  };
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -519,9 +534,8 @@ What would you like to explore first? You can ask me anything about your situati
                   <div key={index} className={`flex gap-2 md:gap-3 mb-6 ${
                     msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'
                   }`}>
-                    {/* Icon */}
                     <div className="flex-shrink-0">
-                      <div className={`w-7 h-7 md:w-8 md:h-8 ${msg.role === 'assistant' ? 'bg-[#F0EEEA]' : 'bg-[#FAE8C9]'} bg-[#F0EEEA] rounded-full flex items-center justify-center`}>
+                      <div className={`w-7 h-7 md:w-8 md:h-8 ${msg.role === 'assistant' ? 'bg-[#F0EEEA]' : 'bg-[#FAE8C9]'} rounded-full flex items-center justify-center`}>
                         {msg.role === 'assistant' ? (
                           <Bot className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
                         ) : (
@@ -530,7 +544,6 @@ What would you like to explore first? You can ask me anything about your situati
                       </div>
                     </div>
                     
-                    {/* Message Content - Auto width based on content */}
                     <div className={`max-w-[75%] md:max-w-[70%] ${
                       msg.role === 'user' 
                         ? 'bg-[#F59F0A] text-black' 
@@ -555,7 +568,6 @@ What would you like to explore first? You can ask me anything about your situati
                   </div>
                 ))}
                 
-                {/* Loading indicator */}
                 {isSending && (
                   <div className="flex gap-2 md:gap-3 mb-6">
                     <div className="flex-shrink-0">
@@ -576,7 +588,7 @@ What would you like to explore first? You can ask me anything about your situati
                 <div ref={messagesEndRef} />
               </div>
             ) : (
-              // Documents Content
+              // Documents Content - UPDATED WITH MARKDOWN SUPPORT
               <div className="px-4 md:px-6 py-4 md:py-6 h-full">
                 <div className="mb-6">
                   <h2 className="text-sm md:text-base font-semibold mb-4">Generate a Document</h2>
@@ -628,7 +640,7 @@ What would you like to explore first? You can ask me anything about your situati
                     <div className="space-y-3">
                       {documents.map(doc => (
                         <div key={doc.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between">
+                          <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-gray-600" />
@@ -639,24 +651,75 @@ What would you like to explore first? You can ask me anything about your situati
                               </p>
                             </div>
                             <div className="flex gap-2">
-                              <button
-                                onClick={() => handleDownloadDocument(doc)}
-                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
-                                title="Download"
-                              >
-                                <Download className="w-4 h-4 text-gray-600" />
-                              </button>
+                              {/* Download Dropdown */}
+                              <div className="relative group">
+                                <button
+                                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                                  title="Download"
+                                >
+                                  <Download className="w-4 h-4 text-gray-600" />
+                                </button>
+                                
+                                {/* Dropdown Menu */}
+                                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                                  <button
+                                    onClick={() => handleDownloadDocument(doc)}
+                                    className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 rounded-t-lg transition-colors"
+                                  >
+                                    📄 Download as Text (.txt)
+                                  </button>
+                                  <button
+                                    onClick={() => handleDownloadMarkdown(doc)}
+                                    className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 rounded-b-lg transition-colors border-t border-gray-100"
+                                  >
+                                    📝 Download as Markdown (.md)
+                                  </button>
+                                </div>
+                              </div>
+                              
                               <button
                                 onClick={() => handleDeleteDocument(doc.id)}
-                                className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                                className="p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
                                 title="Delete"
                               >
-                                <Trash2 className="w-4 h-4 text-red-600 cursor-pointer" />
+                                <Trash2 className="w-4 h-4 text-red-600" />
                               </button>
                             </div>
                           </div>
-                          <div className="mt-3 p-3 bg-gray-50 rounded text-xs font-mono overflow-x-auto max-h-40 overflow-y-auto whitespace-pre-wrap">
-                            {doc.content.substring(0, 300)}...
+                          
+                          {/* UPDATED: Markdown-rendered preview */}
+                          <div className="p-4 bg-gray-50 rounded text-xs max-h-80 overflow-y-auto">
+                            <ReactMarkdown
+                              components={{
+                                h1: ({node, ...props}) => <h1 className="text-base font-bold mb-2 text-gray-900" {...props} />,
+                                h2: ({node, ...props}) => <h2 className="text-sm font-bold mb-2 text-gray-900" {...props} />,
+                                h3: ({node, ...props}) => <h3 className="text-xs font-bold mb-1 text-gray-900" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                                em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />,
+                                p: ({node, ...props}) => <p className="mb-2 text-gray-700 leading-relaxed" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2 space-y-1" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2 space-y-1" {...props} />,
+                                li: ({node, ...props}) => <li className="text-gray-700" {...props} />,
+                                blockquote: ({node, ...props}) => (
+                                  <blockquote className="border-l-2 border-gray-300 pl-3 italic text-gray-600 my-2" {...props} />
+                                ),
+                                hr: ({node, ...props}) => <hr className="my-3 border-gray-300" {...props} />,
+                                code: ({node, inline, ...props}) => 
+                                  inline ? (
+                                    <code className="bg-gray-200 px-1 py-0.5 rounded text-xs" {...props} />
+                                  ) : (
+                                    <code className="block bg-gray-200 p-2 rounded text-xs my-2 overflow-x-auto" {...props} />
+                                  ),
+                              }}
+                            >
+                              {doc.content.length > 1000 ? doc.content.substring(0, 1000) + '...' : doc.content}
+                            </ReactMarkdown>
+                            
+                            {doc.content.length > 1000 && (
+                              <p className="text-xs text-gray-500 mt-3 italic text-center">
+                                Preview truncated • Download to view full document
+                              </p>
+                            )}
                           </div>
                         </div>
                       ))}
