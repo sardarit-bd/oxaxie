@@ -38,7 +38,6 @@ const CaseForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
-  // Add these new state variables for the upgrade modal
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeData, setUpgradeData] = useState(null);
 

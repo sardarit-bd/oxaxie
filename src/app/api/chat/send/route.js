@@ -14,12 +14,47 @@ export async function POST(req) {
     }
 
     const body = await req.json();
-    const { all_case_id, message, caseData, conversationHistory, caseDocuments } = body;
+    const { all_case_id, message, caseData, conversationHistory, caseDocuments, feedback_id } = body;
 
     console.log('=== Chat API Route Debug ===');
     console.log('Case ID:', all_case_id);
     console.log('Message:', message);
+    console.log('Feedback ID:', feedback_id);
+    console.log('Has caseData:', !!caseData);
     console.log('Case Documents received:', caseDocuments?.length || 0);
+
+    let effectiveCaseData = caseData;
+    if (!effectiveCaseData && all_case_id) {
+      console.log('Case data not provided, fetching from backend...');
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000/api';
+      
+      try {
+        const caseResponse = await fetch(`${backendUrl}/case/${all_case_id}`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Accept": "application/json",
+          }
+        });
+
+        if (caseResponse.ok) {
+          const caseResult = await caseResponse.json();
+          effectiveCaseData = caseResult.data || caseResult;
+          console.log('Case data fetched successfully');
+        } else {
+          console.error('Failed to fetch case data:', caseResponse.status);
+        }
+      } catch (err) {
+        console.error('Error fetching case data:', err);
+      }
+    }
+
+    if (!effectiveCaseData) {
+      return NextResponse.json(
+        { success: false, message: "Case data not available" },
+        { status: 400 }
+      );
+    }
+
     if (caseDocuments && caseDocuments.length > 0) {
       console.log('Document details:', caseDocuments.map(d => ({
         id: d.id,
@@ -32,24 +67,20 @@ export async function POST(req) {
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000/api';
     console.log('Backend URL:', backendUrl);
 
-    // Prepare content for Claude
     const content = [];
     let imagesAdded = 0;
     
-    // Add case documents as images if they exist
     if (caseDocuments && caseDocuments.length > 0) {
       console.log('Processing documents for AI...');
       
       for (const doc of caseDocuments) {
         console.log(`Processing document: ${doc.original_name} (${doc.mime_type})`);
         
-        // Only process images
         if (doc.mime_type && doc.mime_type.startsWith('image/')) {
           try {
             const imageUrl = `${backendUrl}/case/document/${doc.id}/content`;
             console.log(`Fetching image from: ${imageUrl}`);
-            
-            // Fetch the image from backend
+
             const imageResponse = await fetch(imageUrl, {
               headers: {
                 "Authorization": `Bearer ${token}`,
@@ -89,7 +120,6 @@ export async function POST(req) {
       console.log('No case documents to process');
     }
 
-    // Add the text message
     content.push({
       type: "text",
       text: message
@@ -97,23 +127,38 @@ export async function POST(req) {
 
     console.log(`Content prepared: ${imagesAdded} images + 1 text message`);
 
-    // Prepare system prompt with case context
-    const systemPrompt = `You are a legal assistant helping with a ${caseData.issue_type} case in ${caseData.location_city}, ${caseData.location_state}.
+    let systemPrompt;
+    if (feedback_id) {
+      systemPrompt = `You are a legal assistant helping with a ${effectiveCaseData.issue_type} case in ${effectiveCaseData.location_city}, ${effectiveCaseData.location_state}.
 
 Case Details:
-${caseData.situation_description}
+${effectiveCaseData.situation_description}
+
+The user has just provided feedback about how the opposing party responded to their previous action. Analyze this response carefully and provide specific, actionable next steps based on:
+1. The type of response received
+2. The legal context and jurisdiction
+3. Timeline considerations
+4. Potential outcomes and strategies
+
+${imagesAdded > 0 ? `The user has uploaded ${imagesAdded} image(s) related to this feedback. Analyze them carefully and reference specific details you see in the images.` : ''}
+
+Provide clear, practical guidance about what the user should do next. Always remind users this is educational information, not legal advice, and they should consult a licensed attorney for specific legal matters.`;
+    } else {
+      systemPrompt = `You are a legal assistant helping with a ${effectiveCaseData.issue_type} case in ${effectiveCaseData.location_city}, ${effectiveCaseData.location_state}.
+
+Case Details:
+${effectiveCaseData.situation_description}
 
 ${imagesAdded > 0 ? `The user has uploaded ${imagesAdded} image(s) related to this case. Analyze them carefully and reference specific details you see in the images.` : ''}
 
 Provide helpful, accurate legal information. Always remind users this is educational information, not legal advice, and they should consult a licensed attorney for specific legal matters.`;
+    }
 
-    // Build conversation history for Claude
-    const messages = conversationHistory.map(msg => ({
+    const messages = (conversationHistory || []).map(msg => ({
       role: msg.role,
       content: msg.content
     }));
 
-    // Add the new message with optional images
     messages.push({
       role: "user",
       content: content
@@ -122,15 +167,16 @@ Provide helpful, accurate legal information. Always remind users this is educati
     console.log('Final message structure:', {
       messageCount: messages.length,
       lastMessageContentItems: content.length,
-      hasImages: imagesAdded > 0
+      hasImages: imagesAdded > 0,
+      isFeedback: !!feedback_id
     });
 
-    // Call backend
     const backendPayload = {
       all_case_id,
       message,
       system_prompt: systemPrompt,
-      messages: messages
+      messages: messages,
+      feedback_id: feedback_id || undefined,
     };
 
     console.log('Sending to backend:', `${backendUrl}/chat/send`);
@@ -139,7 +185,8 @@ Provide helpful, accurate legal information. Always remind users this is educati
       messageLength: message.length,
       systemPromptLength: systemPrompt.length,
       messagesCount: messages.length,
-      lastMessageHasImages: content.length > 1
+      lastMessageHasImages: content.length > 1,
+      hasFeedbackId: !!feedback_id
     });
 
     const response = await fetch(

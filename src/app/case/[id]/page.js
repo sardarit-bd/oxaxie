@@ -23,7 +23,9 @@ export default function CaseChat() {
   const [caseDocuments, setCaseDocuments] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Fetch documents when switching to documents tab
+
+  const [feedbackProcessed, setFeedbackProcessed] = useState(false);
+
   useEffect(() => {
     if (caseId && activeTab === 'documents') {
       console.log('Tab switched to documents, fetching...');
@@ -152,36 +154,21 @@ export default function CaseChat() {
     }
   };
 
-  // UPDATED: Download function with markdown conversion
   const handleDownloadDocument = (document) => {
-    // Convert markdown to plain text by removing markdown syntax
     let plainText = document.content;
     
-    // Remove bold/italic markers
-    plainText = plainText.replace(/\*\*\*(.+?)\*\*\*/g, '$1'); // bold+italic
-    plainText = plainText.replace(/\*\*(.+?)\*\*/g, '$1'); // bold
-    plainText = plainText.replace(/\*(.+?)\*/g, '$1'); // italic
-    plainText = plainText.replace(/__(.+?)__/g, '$1'); // bold alternative
-    plainText = plainText.replace(/_(.+?)_/g, '$1'); // italic alternative
-    
-    // Remove headers but keep the text
+    plainText = plainText.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
+    plainText = plainText.replace(/\*\*(.+?)\*\*/g, '$1');
+    plainText = plainText.replace(/\*(.+?)\*/g, '$1');
+    plainText = plainText.replace(/__(.+?)__/g, '$1');
+    plainText = plainText.replace(/_(.+?)_/g, '$1');
     plainText = plainText.replace(/^#{1,6}\s+(.+)$/gm, '$1');
-    
-    // Convert lists - keep the structure but remove markdown
-    plainText = plainText.replace(/^\s*[-*+]\s+/gm, '• '); // bullet lists
-    plainText = plainText.replace(/^\s*(\d+)\.\s+/gm, '$1. '); // numbered lists
-    
-    // Remove blockquote markers
+    plainText = plainText.replace(/^\s*[-*+]\s+/gm, '• ');
+    plainText = plainText.replace(/^\s*(\d+)\.\s+/gm, '$1. ');
     plainText = plainText.replace(/^\s*>\s+/gm, '');
-    
-    // Remove horizontal rules
     plainText = plainText.replace(/^[-*_]{3,}$/gm, '');
-    
-    // Remove code blocks
     plainText = plainText.replace(/```[\s\S]*?```/g, '');
     plainText = plainText.replace(/`(.+?)`/g, '$1');
-    
-    // Clean up extra newlines (more than 2 consecutive)
     plainText = plainText.replace(/\n{3,}/g, '\n\n');
     
     const blob = new Blob([plainText], { 
@@ -195,7 +182,6 @@ export default function CaseChat() {
     URL.revokeObjectURL(url);
   };
 
-  // NEW: Download as markdown (for users who want to edit)
   const handleDownloadMarkdown = (document) => {
     const blob = new Blob([document.content], { 
       type: 'text/markdown;charset=utf-8' 
@@ -208,6 +194,7 @@ export default function CaseChat() {
     URL.revokeObjectURL(url);
   };
 
+  // UPDATED: Main useEffect to load case data and check for pending feedback
   useEffect(() => {
     if (caseId) {
       fetchCaseData();
@@ -307,6 +294,8 @@ export default function CaseChat() {
             }
             
             setLoading(false);
+            
+            checkAndSendPendingFeedback();
             return;
           } else {
             console.log('No messages found in response');
@@ -326,11 +315,205 @@ export default function CaseChat() {
         timestamp: new Date().toISOString()
       }]);
       
+      checkAndSendPendingFeedback();
+      
     } catch (err) {
       console.error('Error fetching case:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+
+  const checkAndSendPendingFeedback = async () => {
+
+    if (feedbackProcessed) {
+      console.log('Feedback already processed, skipping...');
+      return;
+    }
+
+    try {
+      console.log('=== Checking for Pending Feedback ===');
+      
+      const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
+        credentials: 'include',
+      });
+      
+      const data = await response.json();
+      console.log('Pending feedback response:', data);
+      
+      if (data.success && data.data) {
+        const feedback = data.data;
+        console.log('Found pending feedback:', feedback);
+        
+        // Mark as processed immediately to prevent duplicate calls
+        setFeedbackProcessed(true);
+        
+        // Build feedback message
+        const feedbackMessage = buildFeedbackMessage(feedback);
+        console.log('Built feedback message:', feedbackMessage);
+        
+        // Prepare messages array with documents if available
+        const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
+        console.log('Messages array prepared:', messagesArray.length, 'messages');
+        
+        // Send to AI
+        await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
+      } else {
+        console.log('No pending feedback found');
+      }
+    } catch (error) {
+      console.error('Error checking pending feedback:', error);
+    }
+  };
+
+  // NEW: Build the feedback message
+  const buildFeedbackMessage = (feedback) => {
+    const typeLabels = {
+      'complied': 'Complied',
+      'partial_compliance': 'Partial Compliance',
+      'refused': 'Refused',
+      'no_response': 'No Response',
+      'counter_offer': 'Counter-offer'
+    };
+
+    let message = `📋 **Response Feedback Update**\n\n`;
+    message += `**Response Type:** ${typeLabels[feedback.response_type]}\n`;
+    message += `**Response Date:** ${new Date(feedback.response_date).toLocaleDateString()}\n`;
+    
+    if (feedback.action_taken_date) {
+      message += `**Original Action Date:** ${new Date(feedback.action_taken_date).toLocaleDateString()}\n`;
+    }
+    
+    message += `\n**Details:**\n${feedback.response_description}\n`;
+
+    if (feedback.documents && feedback.documents.length > 0) {
+      message += `\n**Attached Documents:** ${feedback.documents.length} file(s)\n`;
+    }
+
+    message += `\nBased on this response, what should be my next steps?`;
+
+    return message;
+  };
+
+ 
+  const buildMessagesWithDocuments = async (feedback, feedbackMessage) => {
+
+    const existingMessages = (messages || []).map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+
+    console.log('Building messages array, existing count:', existingMessages.length);
+
+    if (feedback.documents && feedback.documents.length > 0) {
+      const contentArray = [
+        { type: 'text', text: feedbackMessage }
+      ];
+
+      for (const doc of feedback.documents) {
+        try {
+          console.log('Fetching document:', doc.id);
+          const docResponse = await fetch(`/api/case/document/${doc.id}/content`, {
+            credentials: 'include',
+          });
+          
+          const docData = await docResponse.json();
+          console.log('Document data received:', docData.success);
+          
+          if (docData.success && docData.data.base64) {
+            contentArray.push({
+              type: doc.media_type.startsWith('image/') ? 'image' : 'document',
+              source: {
+                type: 'base64',
+                media_type: doc.media_type,
+                data: docData.data.base64
+              }
+            });
+            console.log('Added document to content array');
+          }
+        } catch (error) {
+          console.error('Error loading document:', error);
+        }
+      }
+
+      return [
+        ...existingMessages,
+        { role: 'user', content: contentArray }
+      ];
+    }
+
+    return [
+      ...existingMessages,
+      { role: 'user', content: feedbackMessage }
+    ];
+  };
+
+
+  const sendFeedbackToChat = async (message, feedbackId, messagesArray) => {
+    try {
+
+      setIsSending(true);
+
+      const userMessage = {
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, userMessage]);
+      
+      const response = await fetch('/api/chat/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          all_case_id: caseId,
+          message: message,
+          feedback_id: feedbackId,
+          messages: messagesArray,
+          conversationHistory: messagesArray,
+          caseData: caseData,
+          caseDocuments: caseDocuments,
+        }),
+      });
+
+      console.log('Chat API response status:', response.status);
+      const data = await response.json();
+      console.log('Chat API response data:', data);
+      
+      if (data.success) {
+        const aiMessage = {
+          role: 'assistant',
+          content: data.data?.ai_message?.content || 'No response received',
+          timestamp: data.data?.ai_message?.created_at || new Date().toISOString()
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+        console.log('Feedback successfully sent to chat and AI responded');
+      } else {
+        console.error('Failed to send feedback to chat:', data);
+        const errorMessage = {
+          role: 'assistant',
+          content: 'I apologize, but I encountered an error processing your feedback. Please try again.',
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending feedback to chat:', error);
+      const errorMessage = {
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error processing your feedback. Please try again.',
+        timestamp: new Date().toISOString(),
+        isError: true
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsSending(false);
     }
   };
 
