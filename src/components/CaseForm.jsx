@@ -142,7 +142,7 @@ const CaseForm = () => {
       console.log('Full API response:', data);
 
       if (!response.ok) {
-        // Handle upgrade required - show modal instead of error
+
         if (data.data?.upgrade_required) {
           setUpgradeData({
             message: data.message,
@@ -152,8 +152,7 @@ const CaseForm = () => {
           setShowUpgradeModal(true);
           return;
         }
-        
-        // Handle validation errors
+
         if (data.errors) {
           const errorMessages = Object.values(data.errors).flat().join('\n');
           setError(errorMessages);
@@ -177,7 +176,6 @@ const CaseForm = () => {
           throw new Error('Case created but ID not found in response');
         }
 
-        // Show warning if some files failed to upload
         if (data.data?.upload_info?.errors?.length > 0) {
           console.warn('Some files failed to upload:', data.data.upload_info.errors);
         }
@@ -208,7 +206,7 @@ const CaseForm = () => {
 
   return (
     <>
-      <section className="py-24 bg-[#FBFAF9]">
+      <section className="py-10 bg-[#FBFAF9]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Section Header */}

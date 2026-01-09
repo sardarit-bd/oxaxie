@@ -110,7 +110,6 @@ export default function PricingPage() {
   const handlePaymentSuccess = (paymentIntent) => {
     console.log('Payment successful:', paymentIntent);
     
-    // Show success message or redirect to dashboard
     router.push('/dashboard?payment=success');
   };
 
@@ -119,7 +118,6 @@ export default function PricingPage() {
     setSelectedPlan(null);
   };
 
-  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FBFAF9] flex items-center justify-center">
@@ -131,16 +129,15 @@ export default function PricingPage() {
     );
   }
 
-  // Don't render content if not authenticated (will redirect)
   if (!isAuthenticated) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-[#FBFAF9] py-12 px-4">
+    <div className="min-h-screen bg-[#FBFAF9] py-5 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Back button */}
-        <div className="mt-20 mb-8 px-8">
+        <div className="mt-5 mb-8 px-8">
           <Link href="/dashboard">
             <button className="flex items-center text-gray-600 hover:text-gray-800 text-sm cursor-pointer">
               <ArrowLeft className="w-4 h-4 mr-2" />

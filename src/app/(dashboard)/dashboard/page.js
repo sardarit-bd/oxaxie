@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Plus, FileText, MessageSquare, Clock, ChevronRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { toast, Toaster } from 'sonner';
 
 export default function Dashboard() {
     const [cases, setCases] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [pagination, setPagination] = useState(null);
+    const [updatingCaseId, setUpdatingCaseId] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -47,6 +49,40 @@ export default function Dashboard() {
         }
     };
 
+    const handleMarkResolved = async (caseId, e) => {
+        e.stopPropagation();
+
+        setUpdatingCaseId(caseId);
+
+        try {
+            const response = await fetch(`/api/case/${caseId}/mark-resolved`, {
+                method: 'PATCH',
+                credentials: 'include',
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || 'Failed to update case status');
+            }
+
+            toast.success('Case marked as resolved!');
+
+            setCases(prevCases => 
+                prevCases.map(c => 
+                    c.id === caseId 
+                        ? { ...c, status: 'resolved' } 
+                        : c
+                )
+            );
+        } catch (err) {
+            console.error('Error marking case as resolved:', err);
+            alert(err.message || 'Failed to mark case as resolved');
+        } finally {
+            setUpdatingCaseId(null);
+        }
+    };
+
     const handleNewCase = () => {
         router.push('/new-case');
     };
@@ -73,6 +109,8 @@ export default function Dashboard() {
             case 'active':
                 return 'bg-green-100 text-green-700';
             case 'resolved':
+                return 'bg-blue-100 text-blue-700';
+            case 'archived':
             case 'closed':
                 return 'bg-gray-100 text-gray-700';
             case 'pending':
@@ -127,142 +165,167 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen bg-[#FBFAF9] px-4 py-8 sm:px-6 lg:px-8">
-            <div className="max-w-4xl mx-auto">
-                {/* Header Section */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-                    <div>
-                        <h1 className="text-3xl sm:text-4xl text-gray-900 mb-2 font-serif">
-                            Your Cases
-                        </h1>
-                        <p className="text-base text-gray-600">
-                            Manage your legal matters and get guidance
-                        </p>
+    <div className="max-w-4xl mx-auto">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <div>
+                <h1 className="text-3xl sm:text-4xl text-gray-900 mb-2 font-serif">
+                    Your Cases
+                </h1>
+                <p className="text-base text-gray-600">
+                    Manage your legal matters and get guidance
+                </p>
+            </div>
+            <button 
+                onClick={handleNewCase}
+                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#ffa70a] text-gray-900 font-medium px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
+            >
+                <Plus size={18} />
+                <span className='text-sm font-semibold'>New Case</span>
+            </button>
+        </div>
+
+        {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {error}
+            </div>
+        )}
+
+        {/* Cases List or Empty State */}
+        {cases.length === 0 ? (
+            /* Empty State */
+            <div className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-12 md:p-16">
+                <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
+                    <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
+                        <FileText size={36} className="text-gray-400" />
                     </div>
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-3">No cases yet</h2>
+                    <p className="text-gray-600 mb-8 leading-relaxed">
+                        Start by creating a new case to get legal guidance for your situation.
+                    </p>
                     <button 
                         onClick={handleNewCase}
-                        className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#ffa70a] text-gray-900 font-medium px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-medium px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
                     >
                         <Plus size={18} />
-                        <span className='text-sm font-semibold'>New Case</span>
+                        <span className='text-sm font-semibold'>Create Your First Case</span>
                     </button>
                 </div>
+            </div>
+        ) : (
+            /* Case Cards */
+            <div className="space-y-4">
+                {cases.map((caseItem) => (
+                    <div
+                        key={caseItem.id}
+                        onClick={() => handleCaseClick(caseItem.id)}
+                        className="bg-white rounded-xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-md transition-all duration-200 group cursor-pointer"
+                    >
+                        <div className="flex items-start gap-4">
+                            {/* Main Content Area */}
+                            <div className="flex-1 min-w-0">
+                                
+                                {/* Badges Header */}
+                                <div className="flex flex-wrap items-center gap-2 mb-3">
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.issue_type)}`}>
+                                        {formatIssueType(caseItem.issue_type)}
+                                    </span>
+                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(caseItem.status)}`}>
+                                        {caseItem.status}
+                                    </span>
+                                    
+                                    {caseItem.status === 'active' && (
+                                        <button
+                                            onClick={(e) => handleMarkResolved(caseItem.id, e)}
+                                            disabled={updatingCaseId === caseItem.id}
+                                            className="px-3 py-1 bg-[#04174A] hover:bg-[#05215e] text-gray-50 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer whitespace-nowrap"
+                                        >
+                                            {updatingCaseId === caseItem.id ? 'Updating...' : 'Mark Resolved'}
+                                        </button>
+                                    )}
+                                </div>
 
-                {error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                        {error}
-                    </div>
-                )}
+                                {/* Title / Description */}
+                                <h3 className="text-lg text-gray-900 mb-4 font-medium break-words line-clamp-2">
+                                    {truncateText(caseItem.situation_description, 100)}
+                                </h3>
 
-                {/* Cases List or Empty State */}
-                {cases.length === 0 ? (
-                    /* Empty State Card */
-                    <div className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-12 md:p-16">
-                        <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
-                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-6">
-                                <FileText size={36} className="text-gray-400" />
-                            </div>
-
-                            <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-                                No cases yet
-                            </h2>
-                            <p className="text-gray-600 mb-8 leading-relaxed">
-                                Start by creating a new case to get legal guidance for your situation.
-                            </p>
-
-                            <button 
-                                onClick={handleNewCase}
-                                className="flex items-center justify-center gap-2 bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-medium px-3 py-2 rounded-lg transition-colors duration-200 shadow-sm cursor-pointer"
-                            >
-                                <Plus size={18} />
-                                <span className='text-sm font-semibold'>Create Your First Case</span>
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    /* Case Cards */
-                    <div className="space-y-4">
-                        {cases.map((caseItem) => (
-                            <div
-                                key={caseItem.id}
-                                onClick={() => handleCaseClick(caseItem.id)}
-                                className="bg-white rounded-xl border border-gray-200 p-6 hover:border-gray-300 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                            >
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        {/* Category and Status Badges */}
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.issue_type)}`}>
-                                                {formatIssueType(caseItem.issue_type)}
-                                            </span>
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(caseItem.status)}`}>
-                                                {caseItem.status}
+                                {/* Footer: Split Left/Right Columns */}
+                                <div className="flex justify-between items-start pt-2 border-t border-gray-50">
+                                    
+                                    {/* Left Column: Location & Date */}
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                            <MessageSquare size={15} className="text-gray-400 shrink-0" />
+                                            <span className="truncate max-w-[140px] sm:max-w-none">
+                                                {caseItem.location_city}, {caseItem.location_state}
                                             </span>
                                         </div>
-
-                                        {/* Case Description (as title) */}
-                                        <h3 className="text-lg text-gray-900 mb-3">
-                                            {truncateText(caseItem.situation_description, 100)}
-                                        </h3>
-
-                                        {/* Case Meta Info + Response Feedback Link */}
-                                        <div className="flex items-center justify-between text-sm text-gray-600">
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center gap-1.5">
-                                                    <MessageSquare size={16} className="text-gray-400" />
-                                                    <span>{caseItem.location_city}, {caseItem.location_state}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock size={16} className="text-gray-400" />
-                                                    <span>{formatDate(caseItem.created_at)}</span>
-                                                </div>
-                                            </div>
-                                            
-                                            <a 
-                                                href={`/feedback/${caseItem.id}`}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    console.log('Feedback link clicked');
-                                                }}
-                                                className="text-gray-600 hover:text-blue-800 font-medium hover:underline"
-                                            >
-                                                Response Feedback
-                                            </a>
+                                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                            <Clock size={15} className="text-gray-400 shrink-0" />
+                                            <span className="whitespace-nowrap">
+                                                {formatDate(caseItem.created_at)}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    {/* Arrow Icon */}
-                                    <ChevronRight 
-                                        size={20} 
-                                        className="text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0 mt-1 ml-4"
-                                    />
+                                    {/* Right Column: Links (Right Aligned) */}
+                                    <div className="flex flex-col items-end gap-2 pl-2">
+                                        <a 
+                                            href={`/feedback/${caseItem.id}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-sm text-gray-600 hover:text-blue-800 font-medium hover:underline text-right"
+                                        >
+                                            Response Feedback
+                                        </a>
+                                        
+                                        {caseItem.status === 'resolved' && (
+                                            <a 
+                                                href={`/case/${caseItem.id}/outcome`}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="text-sm text-gray-600 hover:text-green-800 font-medium hover:underline text-right"
+                                            >
+                                                Case Outcome
+                                            </a>
+                                        )}
+                                    </div>
+
                                 </div>
                             </div>
-                        ))}
-                    </div>
-                )}
 
-                {/* Pagination */}
-                {pagination && (pagination.nextPageUrl || pagination.prevPageUrl) && (
-                    <div className="flex justify-center gap-4 mt-8">
-                        {pagination.prevPageUrl && (
-                            <button
-                                onClick={() => fetchCases(pagination.currentPage - 1)}
-                                className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                Previous
-                            </button>
-                        )}
-                        {pagination.nextPageUrl && (
-                            <button
-                                onClick={() => fetchCases(pagination.currentPage + 1)}
-                                className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                Next
-                            </button>
-                        )}
+                            {/* Arrow Icon */}
+                            <ChevronRight 
+                                size={20} 
+                                className="text-gray-300 group-hover:text-gray-500 transition-colors flex-shrink-0 mt-1"
+                            />
+                        </div>
                     </div>
+                ))}
+            </div>
+        )}
+
+        {/* Pagination */}
+        {pagination && (pagination.nextPageUrl || pagination.prevPageUrl) && (
+            <div className="flex justify-center gap-4 mt-8 pb-8">
+                {pagination.prevPageUrl && (
+                    <button
+                        onClick={() => fetchCases(pagination.currentPage - 1)}
+                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        Previous
+                    </button>
+                )}
+                {pagination.nextPageUrl && (
+                    <button
+                        onClick={() => fetchCases(pagination.currentPage + 1)}
+                        className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        Next
+                    </button>
                 )}
             </div>
-        </div>
+        )}
+    </div>
+</div>
     );
 }

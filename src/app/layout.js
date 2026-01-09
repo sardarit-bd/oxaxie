@@ -1,8 +1,6 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
-import { FlashProvider } from '../context/FlashContext';
-import FlashMessage from '../components/FlashMessage';
 import "./globals.css";
-
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,11 +31,8 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} font-sans antialiased bg-white text-black`}
       >
-        <FlashProvider>
-          <FlashMessage />
           {children}
-        </FlashProvider>
-
+          <Toaster position="top-center" richColors closeButton />
       </body>
     </html>
   );

@@ -104,6 +104,18 @@ export default function DashboardNavbar({ isLoggedIn = false, userName = null })
                                 >
                                     Pricing
                                 </button>
+
+                                <button 
+                                    onClick={() => {
+                                        router.push('/profile');
+                                        setIsMobileMenuOpen(false);
+                                    }}
+                                    className="w-full text-left text-gray-700 hover:text-gray-900 px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 rounded-md"
+                                >
+                                    Profile
+                                </button>
+
+
                                 <button 
                                     onClick={() => {
                                         handleSignOut();

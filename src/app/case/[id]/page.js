@@ -5,6 +5,7 @@ import { Scale, ArrowLeft, Send, Bot, FileText, Plus, User, Download, Trash2 } f
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
+import { toast } from 'sonner';
 
 export default function CaseChat() {
   const params = useParams();
@@ -41,12 +42,9 @@ export default function CaseChat() {
       const response = await fetch(`/api/cases/${caseId}/documents`, {
         credentials: 'include'
       });
-      
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
+
       
       const text = await response.text();
-      console.log('Raw response text:', text);
       
       let data;
       try {
@@ -89,10 +87,6 @@ export default function CaseChat() {
   const handleGenerateDocument = async (documentType) => {
     if (isGenerating) return;
     
-    console.log('=== Document Generation Debug ===');
-    console.log('Case ID:', caseId);
-    console.log('Document Type:', documentType);
-    
     setIsGenerating(true);
 
     try {
@@ -111,9 +105,9 @@ export default function CaseChat() {
 
       if (!response.ok) {
         if (data.upgrade_required) {
-          alert(`${data.message}\nPlease upgrade to ${data.upgrade_to} plan.`);
+          toast.error(`${data.message} Please upgrade to ${data.upgrade_to} plan.`);
         } else {
-          alert(data.message || 'Failed to generate document');
+          toast.error('Failed to generate document.');
         }
         setIsGenerating(false);
         return;
@@ -126,11 +120,11 @@ export default function CaseChat() {
           fetchDocuments();
         }, 100);
         
-        alert('Document generated successfully!');
+        toast.success('Document generated successfully!');
       }
     } catch (error) {
       console.error('Error generating document:', error);
-      alert('Failed to generate document. Please try again.');
+      toast.error('Error generating document. Please try again.');
     } finally {
       setIsGenerating(false);
     }
@@ -147,7 +141,7 @@ export default function CaseChat() {
 
       if (response.ok) {
         await fetchDocuments();
-        alert('Document deleted successfully');
+        toast.success('Document deleted successfully!');
       }
     } catch (error) {
       console.error('Error deleting document:', error);
@@ -194,7 +188,6 @@ export default function CaseChat() {
     URL.revokeObjectURL(url);
   };
 
-  // UPDATED: Main useEffect to load case data and check for pending feedback
   useEffect(() => {
     if (caseId) {
       fetchCaseData();
@@ -346,19 +339,17 @@ export default function CaseChat() {
       if (data.success && data.data) {
         const feedback = data.data;
         console.log('Found pending feedback:', feedback);
-        
-        // Mark as processed immediately to prevent duplicate calls
+      
         setFeedbackProcessed(true);
         
-        // Build feedback message
         const feedbackMessage = buildFeedbackMessage(feedback);
         console.log('Built feedback message:', feedbackMessage);
         
-        // Prepare messages array with documents if available
+  
         const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
         console.log('Messages array prepared:', messagesArray.length, 'messages');
         
-        // Send to AI
+
         await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
       } else {
         console.log('No pending feedback found');
@@ -368,7 +359,7 @@ export default function CaseChat() {
     }
   };
 
-  // NEW: Build the feedback message
+
   const buildFeedbackMessage = (feedback) => {
     const typeLabels = {
       'complied': 'Complied',
@@ -518,29 +509,33 @@ export default function CaseChat() {
   };
 
   const generateInitialMessage = (data) => {
-    return `I've reviewed your ${formatIssueType(data.issue_type).toLowerCase()} situation in ${data.location_city}, ${data.location_state}. Here's my initial analysis:
+    const message = `
+        I've reviewed your ${formatIssueType(data.issue_type).toLowerCase()} situation in ${data.location_city}, ${data.location_state}. Here's my initial analysis:
 
-**Understanding Your Situation:**
-${data.situation_description}
+        **Understanding Your Situation:**
+        ${data.situation_description}
 
-**Key Legal Considerations:**
-- Your rights are protected under local and state laws in ${data.location_state}
-- Documentation is crucial - keep records of all communications
-- Time limits may apply, so acting promptly is important
+        **Key Legal Considerations:**
+        - Your rights are protected under local and state laws in ${data.location_state}
+        - Documentation is crucial - keep records of all communications
+        - Time limits may apply, so acting promptly is important
 
-**Recommended Next Steps:**
-1. Gather all relevant documents and evidence
-2. Document the timeline of events
-3. Consider sending a formal written notice
-4. Research local legal aid resources if needed
+        **Recommended Next Steps:**
+        1. Gather all relevant documents and evidence
+        2. Document the timeline of events
+        3. Consider sending a formal written notice
+        4. Research local legal aid resources if needed
 
-**How I Can Help:**
-- Answer specific questions about your rights
-- Help you understand your legal options
-- Generate formal documents like demand letters or notices
-- Explain relevant laws and procedures
+        **How I Can Help:**
+        - Answer specific questions about your rights
+        - Help you understand your legal options
+        - Generate formal documents like demand letters or notices
+        - Explain relevant laws and procedures
 
-What would you like to explore first? You can ask me anything about your situation, or I can help you draft a formal document.`;
+        What would you like to explore first? You can ask me anything about your situation, or I can help you draft a formal document.
+    `;
+    
+    return message.split('\n').map(line => line.trim()).join('\n').trim();
   };
 
   const formatIssueType = (issueType) => {
@@ -574,9 +569,6 @@ What would you like to explore first? You can ask me anything about your situati
     setIsSending(true);
 
     try {
-      console.log('=== Sending Message to AI ===');
-      console.log('Message:', userMessage);
-      
       const response = await fetch('/api/chat/send', {
         method: 'POST',
         headers: {
@@ -592,7 +584,6 @@ What would you like to explore first? You can ask me anything about your situati
         }),
       });
 
-      console.log('Chat API response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -668,7 +659,7 @@ What would you like to explore first? You can ask me anything about your situati
               <Scale className="w-6 h-6" />
               <span className="font-semibold text-lg">Advocate</span>
             </div>
-            <span className="text-gray-500 text-sm">
+            <span className="text-gray-500 text-sm hidden sm:inline">
               | {formatIssueType(caseData.issue_type)} • {caseData.location_city}
             </span>
           </div>
@@ -771,15 +762,16 @@ What would you like to explore first? You can ask me anything about your situati
                 <div ref={messagesEndRef} />
               </div>
             ) : (
-              // Documents Content - UPDATED WITH MARKDOWN SUPPORT
               <div className="px-4 md:px-6 py-4 md:py-6 h-full">
                 <div className="mb-6">
                   <h2 className="text-sm md:text-base font-semibold mb-4">Generate a Document</h2>
-                  <div className="flex flex-wrap gap-2">
+                  
+                  {/* UPDATED: 2 Columns on Mobile, Flex Row on Desktop */}
+                  <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-2">
                     <button
                       onClick={() => handleGenerateDocument('demand_letter')}
                       disabled={isGenerating}
-                      className="flex items-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
+                      className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50 w-full md:w-auto"
                     >
                       <Plus className="w-3 h-3 md:w-4 md:h-4" />
                       {isGenerating ? 'Generating...' : 'Demand Letter'}
@@ -787,21 +779,21 @@ What would you like to explore first? You can ask me anything about your situati
                     <button 
                       onClick={() => handleGenerateDocument('formal_notice')}
                       disabled={isGenerating}
-                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
+                      className="flex items-center justify-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50 w-full md:w-auto"
                     >
                       Formal Notice
                     </button>
                     <button 
                       onClick={() => handleGenerateDocument('response_letter')}
                       disabled={isGenerating}
-                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
+                      className="flex items-center justify-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50 w-full md:w-auto"
                     >
                       Response Letter
                     </button>
                     <button 
                       onClick={() => handleGenerateDocument('cease_desist')}
                       disabled={isGenerating}
-                      className="px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50"
+                      className="flex items-center justify-center px-3 md:px-4 py-2 border border-gray-300 rounded-lg text-xs md:text-sm transition-colors font-semibold hover:bg-[#FF9500] hover:text-black cursor-pointer disabled:opacity-50 w-full md:w-auto"
                     >
                       Cease & Desist
                     </button>
@@ -870,7 +862,6 @@ What would you like to explore first? You can ask me anything about your situati
                             </div>
                           </div>
                           
-                          {/* UPDATED: Markdown-rendered preview */}
                           <div className="p-4 bg-gray-50 rounded text-xs max-h-80 overflow-y-auto">
                             <ReactMarkdown
                               components={{

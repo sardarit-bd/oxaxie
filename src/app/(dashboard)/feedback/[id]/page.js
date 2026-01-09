@@ -34,14 +34,13 @@ export default function ResponseFeedbackForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // Helper to handle standard inputs
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  // Helper specifically for the Card Selection (Step 1)
   const handleTypeSelect = (typeValue) => {
     setFormData((prev) => ({ ...prev, response_type: typeValue }));
     setError("");
@@ -50,8 +49,7 @@ export default function ResponseFeedbackForm() {
   const handleFileChange = (e) => {
     if (e.target.files) {
       const selectedFiles = Array.from(e.target.files);
-      
-      // Merge with existing files to check total count
+
       const totalFiles = files.length + selectedFiles.length;
 
       if (totalFiles > 5) {
@@ -65,7 +63,6 @@ export default function ResponseFeedbackForm() {
         return;
       }
 
-      // Add unique ID for UI handling if needed, otherwise just store file
       const filesWithId = selectedFiles.map(file => {
         file.id = Math.random().toString(36).substr(2, 9);
         return file;
@@ -79,68 +76,6 @@ export default function ResponseFeedbackForm() {
   const removeFile = (fileId) => {
     setFiles(prev => prev.filter(f => f.id !== fileId));
   };
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setIsSubmitting(true);
-  //   setError("");
-
-  //   try {
-  //     const feedbackResponse = await fetch(`/api/feedback/cases/${caseId}/feedback`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       credentials: "include",
-  //       body: JSON.stringify({
-  //         response_type: formData.response_type,
-  //         response_description: formData.response_description,
-  //         response_date: formData.response_date,
-  //         action_taken_date: formData.action_taken_date || null,
-  //       }),
-  //     });
-
-  //     const feedbackData = await feedbackResponse.json();
-      
-  //     if (!feedbackResponse.ok) {
-  //       throw new Error(feedbackData.message || "Failed to submit feedback");
-  //     }
-
-  //     const feedbackId = feedbackData.data.id;
-
-  //     if (files.length > 0) {
-  //       const formDataFiles = new FormData();
-  //       files.forEach((file) => {
-  //         formDataFiles.append("documents[]", file);
-  //       });
-
-  //       const uploadResponse = await fetch(`/api/feedback/${feedbackId}/documents`, {
-  //         method: "POST",
-  //         credentials: "include",
-  //         body: formDataFiles,
-  //       });
-
-  //       if (!uploadResponse.ok) {
-  //         console.error("Document upload failed, but feedback created");
-  //       }
-  //     }
-
-  //     // Trigger AI Analysis without awaiting
-  //     fetch(`/api/feedback/${feedbackId}/analyze`, {
-  //       method: "POST",
-  //       credentials: "include",
-  //     }).catch(err => console.error("AI analysis failed:", err));
-
-  //     // alert("Feedback submitted successfully!"); // Optional: prefer not to block UI
-  //     router.push(`/cases/${caseId}`);
-
-  //   } catch (err) {
-  //     console.error("Submission error:", err);
-  //     setError(err.message || "Failed to submit feedback. Please try again.");
-  //   } finally {
-  //     setIsSubmitting(false);
-  //   }
-  // };
 
 
   const handleSubmit = async (e) => {
