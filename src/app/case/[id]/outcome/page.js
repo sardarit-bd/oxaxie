@@ -180,7 +180,7 @@ export default function CaseOutcomeForm() {
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl text-gray-900 mb-4">
             Case <span className="italic">Outcome</span>
           </h2>
-          <p className="text-[18px] text-gray-600/80 font-inter mb-6">
+          <p className="text-sm text-gray-600/80 font-inter mb-6">
             Share how your situation was resolved so we can improve our guidance
           </p>
           

@@ -1,7 +1,25 @@
+'use client';
+
 import { Globe, FileText, Shield, ArrowRight, Scale } from "lucide-react";
 import { Button } from "../components/ui/button";
 
 const Hero = () => {
+  const scrollToHowItWorks  = () => {
+
+    const element = document.getElementById("how-it-works");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
+  const scrollToCaseForm  = () => {
+
+    const element = document.getElementById("case-form");
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+    }
+  }
+
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-8 overflow-hidden bg-[#27334C]">
       
@@ -43,13 +61,13 @@ const Hero = () => {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
             {/* First Button: w-fit ensures it only expands to fit the text + padding */}
-            <button className="w-fit sm:w-auto inline-flex items-center justify-center gap-2 bg-[#FFAF0B] text-black font-semibold hover:brightness-110 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg shadow-[0_0_20px_rgba(255,175,11,0.3)] cursor-pointer">
+            <button onClick={ scrollToCaseForm } className="w-fit sm:w-auto inline-flex items-center justify-center gap-2 bg-[#FFAF0B] text-black font-semibold hover:brightness-110 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg shadow-[0_0_20px_rgba(255,175,11,0.3)] cursor-pointer">
               Get Legal Guidance
               <ArrowRight className="w-5 h-5" />
             </button>
             
             {/* Second Button: w-fit allows it to be a different size than the first one */}
-            <button className="w-fit sm:w-auto inline-flex items-center justify-center gap-2 border-2 border-white/30 text-white bg-transparent hover:bg-white/10 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg cursor-pointer">
+            <button onClick={ scrollToHowItWorks } className="w-fit sm:w-auto inline-flex items-center justify-center gap-2 border-2 border-white/30 text-white bg-transparent hover:bg-white/10 transition-all active:scale-[0.98] h-14 rounded-xl px-10 text-lg cursor-pointer">
               How It Works
             </button>
           </div>

@@ -160,7 +160,7 @@ export default function ResponseFeedbackForm() {
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-gray-900 mb-4">
             Response <span className="italic">Feedback</span>
           </h1>
-          <p className="text-[18px] text-gray-600/80 font-inter">
+          <p className="text-sm text-gray-600/80 font-inter">
             Track how the opposing party responded to your actions
           </p>
         </div>
@@ -314,7 +314,7 @@ export default function ResponseFeedbackForm() {
                 <div className="space-y-2">
                   {files.map((file) => (
                     <div 
-                      key={file.id || file.name} // fallback key
+                      key={file.id || file.name}
                       className="flex items-center gap-3 p-3 bg-[#F5F3F1] rounded-lg border border-gray-200/50"
                     >
                       <FileText className="w-4 h-4 text-gray-400 flex-shrink-0" />
@@ -345,7 +345,7 @@ export default function ResponseFeedbackForm() {
               className={`
                 relative inline-flex items-center justify-center gap-2
                 whitespace-nowrap transition-all duration-300
-                bg-[#F7BB57] h-[58px] px-8 rounded-[14px] flex-1
+                bg-[#F7BB57] py-4 px-8 rounded-[14px] flex-1
                 border-t border-white/25
                 ${isFormValid && !isSubmitting
                   ? 'shadow-[0_8px_25px_-5px_rgba(247,187,87,0.5)] hover:brightness-[1.03] active:scale-[0.98] cursor-pointer' 

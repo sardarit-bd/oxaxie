@@ -206,7 +206,7 @@ const CaseForm = () => {
 
   return (
     <>
-      <section className="py-10 bg-[#FBFAF9]">
+      <section id='case-form' className="md:scroll-mt-12 lg:scroll-mt-12 py-12 bg-[#FBFAF9]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           
           {/* Section Header */}
