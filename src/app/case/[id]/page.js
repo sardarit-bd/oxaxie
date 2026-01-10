@@ -84,52 +84,99 @@ export default function CaseChat() {
     }
   };
 
-  const handleGenerateDocument = async (documentType) => {
-    if (isGenerating) return;
+  // const handleGenerateDocument = async (documentType) => {
+  //   if (isGenerating) return;
     
-    setIsGenerating(true);
+  //   setIsGenerating(true);
 
-    try {
-      const response = await fetch('/api/documents/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          all_case_id: caseId,
-          document_type: documentType
-        })
-      });
+  //   try {
+  //     const response = await fetch('/api/documents/generate', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       credentials: 'include',
+  //       body: JSON.stringify({
+  //         all_case_id: caseId,
+  //         document_type: documentType
+  //       })
+  //     });
 
-      const data = await response.json();
-      console.log('Generate document response:', data);
+  //     const data = await response.json();
+  //     console.log('Generate document response:', data);
 
-      if (!response.ok) {
-        if (data.upgrade_required) {
-          toast.error(`${data.message} Please upgrade to ${data.upgrade_to} plan.`);
-        } else {
-          toast.error('Failed to generate document.');
-        }
-        setIsGenerating(false);
-        return;
-      }
+  //     if (!response.ok) {
+  //       if (data.upgrade_required) {
+  //         toast.error(`${data.message} Please upgrade to ${data.upgrade_to} plan.`);
+  //       } else {
+  //         toast.error('Failed to generate document.');
+  //       }
+  //       setIsGenerating(false);
+  //       return;
+  //     }
 
-      if (data.success) {
-        setActiveTab('documents');
+  //     if (data.success) {
+  //       setActiveTab('documents');
         
-        setTimeout(() => {
-          fetchDocuments();
-        }, 100);
+  //       setTimeout(() => {
+  //         fetchDocuments();
+  //       }, 100);
         
-        toast.success('Document generated successfully!');
+  //       toast.success('Document generated successfully!');
+  //     }
+  //   } catch (error) {
+  //     console.error('Error generating document:', error);
+  //     toast.error('Error generating document. Please try again.');
+  //   } finally {
+  //     setIsGenerating(false);
+  //   }
+  // };
+
+
+  const handleGenerateDocument = async (documentType) => {
+  if (isGenerating) return;
+  
+  setIsGenerating(true);
+
+  try {
+    const response = await fetch('/api/documents/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        all_case_id: caseId,
+        document_type: documentType
+      })
+    });
+
+    const data = await response.json();
+    console.log('Generate document response:', data);
+
+    if (!response.ok || !data.success) {
+      // Check if it's an upgrade required error
+      if (data.errors?.upgrade_required) {
+        toast.error(data.message); // This will show: "You've reached your free plan limit of 1 document per month."
+      } else {
+        toast.error(data.message || 'Failed to generate document.');
       }
-    } catch (error) {
-      console.error('Error generating document:', error);
-      toast.error('Error generating document. Please try again.');
-    } finally {
       setIsGenerating(false);
+      return;
     }
-  };
 
+    if (data.success) {
+      setActiveTab('documents');
+      
+      setTimeout(() => {
+        fetchDocuments();
+      }, 100);
+      
+      toast.success('Document generated successfully!');
+    }
+  } catch (error) {
+    console.error('Error generating document:', error);
+    toast.error('Error generating document. Please try again.');
+  } finally {
+    setIsGenerating(false);
+  }
+};
   const handleDeleteDocument = async (documentId) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
     

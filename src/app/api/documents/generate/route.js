@@ -35,7 +35,7 @@ export async function POST(req) {
   } catch (error) {
     console.error('Document generation error:', error);
     return NextResponse.json(
-      { success: false, message: "Failed to generate document" },
+      { success: false, message: data },
       { status: 500 }
     );
   }

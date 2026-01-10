@@ -5,12 +5,9 @@ export async function GET(req, { params }) {
   try {
     console.log('=== Documents Fetch Proxy ===');
     
-    // FIXED: Await params first, then destructure
     const resolvedParams = await params;
     const caseId = resolvedParams.caseId;
-    
-    console.log('Resolved params:', resolvedParams);
-    console.log('Case ID:', caseId);
+  
     
     const cookieStore = await cookies();
     const token = cookieStore.get("authToken")?.value;
