@@ -4,12 +4,72 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Check, LogOut, Zap, Briefcase, FileText, User, Minus, Info, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import DowngradeModal from '@/components/custom/DowngradeModal';
+import { toast } from 'sonner';
 
 export default function Profile() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const [isDowngrading, setIsDowngrading] = useState(false);
+  const [downgradeModal, setDowngradeModal] = useState({
+    isOpen: false,
+    currentPlan: null
+  });
+
+  const handleDowngradeClick = (currentPlan) => {
+    setDowngradeModal({
+      isOpen: true,
+      currentPlan: currentPlan
+    });
+  };
+
+  const handleConfirmDowngrade = async () => {
+    setIsDowngrading(true);
+    
+    try {
+      const response = await fetch('/api/subscription/downgrade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success('Successfully downgraded to Free plan');
+
+        setDowngradeModal({ isOpen: false, currentPlan: null });
+        
+        const authResponse = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        
+        if (authResponse.ok) {
+          const authData = await authResponse.json();
+          const userData = authData.user?.data || authData.data;
+          setUser(userData);
+        }
+
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+        
+      } else {
+        toast.error(data.message || 'Failed to downgrade plan');
+      }
+    } catch (error) {
+      console.error('Downgrade error:', error);
+      toast.error('An error occurred while downgrading');
+    } finally {
+      setIsDowngrading(false);
+    }
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -244,137 +304,141 @@ export default function Profile() {
 
         {/* --- COMPARISON TABLE SECTION --- */}
         <div className="w-full max-w-7xl mx-auto px-4 py-8">
-  <div id="plans" className="text-center mb-12">
-    <h2 className="text-3xl md:text-5xl font-serif text-gray-900 mb-4">
-      Compare <span className="italic">Plans</span>
-    </h2>
-    <p className="text-gray-600 text-base md:text-lg max-w-2xl mx-auto">
-      Find the perfect balance of features and capability for your legal needs.
-    </p>
-  </div>
+          <div id="plans" className="text-center mb-12">
+            <h2 className="text-3xl md:text-5xl font-serif text-gray-900 mb-4">
+              Compare <span className="italic">Plans</span>
+            </h2>
+            <p className="text-gray-600 text-base md:text-lg max-w-2xl mx-auto">
+              Find the perfect balance of features and capability for your legal needs.
+            </p>
+          </div>
 
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative">
-    
-    {/* 
-       FIXED CONTAINER:
-       1. Added 'touch-pan-x' to improve touch handling.
-       2. Added 'overscroll-x-contain' to prevent swiping the whole page back.
-       3. Added inline style WebkitOverflowScrolling for smooth iOS momentum.
-    */}
-    <div 
-      className="overflow-x-auto w-full touch-pan-x overscroll-x-contain custom-scrollbar pb-1"
-      style={{ WebkitOverflowScrolling: 'touch' }}
-    >
-      <table className="w-full text-left border-collapse min-w-[600px] md:min-w-full">
-        <thead>
-          <tr>
-            {/* STICKY CORNER */}
-            <th className="sticky left-0 z-20 p-4 md:p-6 bg-white w-[140px] md:w-1/4 border-r border-gray-100 shadow-[4px_0_10px_-5px_rgba(0,0,0,0.1)]">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block md:hidden">
-                Features
-              </span>
-            </th>
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden relative">
+            <div 
+              className="overflow-x-auto w-full touch-pan-x overscroll-x-contain custom-scrollbar pb-1"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
+              <table className="w-full text-left border-collapse min-w-[600px] md:min-w-full">
+                <thead>
+                  <tr>
+                    {/* STICKY CORNER */}
+                    <th className="sticky left-0 z-20 p-4 md:p-6 bg-white w-[140px] md:w-1/4 border-r border-gray-100 shadow-[4px_0_10px_-5px_rgba(0,0,0,0.1)]">
+                      <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider block md:hidden">
+                        Features
+                      </span>
+                    </th>
 
-            {/* Free Header */}
-            <th className="p-4 md:p-6 min-w-[160px] md:min-w-[200px] text-center">
-              <h3 className="text-lg md:text-xl font-serif text-gray-900">Free</h3>
-              <div className="mt-2 text-2xl md:text-3xl font-bold font-sans">$0</div>
-              <p className="text-[10px] md:text-xs text-gray-500 mt-1">/forever</p>
-              <Link href="/pricing">
-                <button
-                  disabled={isCurrentPlan('free')}
-                  className={`mt-4 w-full py-2 border rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                    isCurrentPlan('free')
-                      ? 'border-green-500 text-green-600 bg-green-50 cursor-default'
-                      : 'border-gray-300 hover:bg-gray-50 cursor-pointer'
-                  }`}
-                >
-                  {isCurrentPlan('free') ? 'Current' : 'Downgrade'}
-                </button>
-              </Link>
-            </th>
+                    {/* Free Header */}
+                    <th className="p-4 md:p-6 min-w-[160px] md:min-w-[200px] text-center">
+                      <h3 className="text-lg md:text-xl font-serif text-gray-900">Free</h3>
+                      <div className="mt-2 text-2xl md:text-3xl font-bold font-sans">$0</div>
+                      <p className="text-[10px] md:text-xs text-gray-500 mt-1">/forever</p>
+                      {isCurrentPlan('free') ? (
+                        <button
+                          disabled
+                          className="mt-4 w-full py-2 border rounded-lg text-xs md:text-sm font-medium border-green-500 text-green-600 bg-green-50 cursor-default"
+                        >
+                          Current
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleDowngradeClick(currentPlan)}
+                          className="mt-4 w-full py-2 border rounded-lg text-xs md:text-sm font-medium border-gray-300 hover:bg-gray-50 cursor-pointer transition-colors"
+                        >
+                          Downgrade
+                        </button>
+                      )}
+                    </th>
 
-            {/* Pro Header (Highlighted) */}
-            <th className="relative p-4 md:p-6 min-w-[160px] md:min-w-[200px] text-center bg-[#FFFBF0] border-l border-r border-orange-200">
-              <div className="absolute top-0 left-0 w-full bg-orange-400 h-1 md:h-1.5"></div>
-              <span className="absolute top-2 md:top-3 left-1/2 -translate-x-1/2 bg-orange-100 text-orange-700 text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide whitespace-nowrap">
-                Most Popular
-              </span>
-              <h3 className="text-lg md:text-xl font-serif text-gray-900 mt-2">Pro</h3>
-              <div className="mt-2 text-2xl md:text-3xl font-bold font-sans text-gray-900">$9</div>
-              <p className="text-[10px] md:text-xs text-gray-500 mt-1">/month</p>
-              <Link href="/pricing">
-                <button
-                  disabled={isCurrentPlan('pro')}
-                  className={`mt-4 w-full py-2 rounded-lg text-xs md:text-sm font-medium shadow-sm transition-colors ${
-                    isCurrentPlan('pro')
-                      ? 'bg-green-500 text-white cursor-default'
-                      : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
-                  }`}
-                >
-                  {isCurrentPlan('pro') ? 'Current' : 'Start Pro'}
-                </button>
-              </Link>
-            </th>
+                    <DowngradeModal
+                      isOpen={downgradeModal.isOpen}
+                      onClose={() => setDowngradeModal({ isOpen: false, currentPlan: null })}
+                      onConfirm={handleConfirmDowngrade}
+                      currentPlan={downgradeModal.currentPlan}
+                      isLoading={isDowngrading}
+                    />
 
-            {/* Pro Plus Header */}
-            <th className="p-4 md:p-6 min-w-[160px] md:min-w-[200px] text-center">
-              <h3 className="text-lg md:text-xl font-serif text-gray-900">Pro Plus</h3>
-              <div className="mt-2 text-2xl md:text-3xl font-bold font-sans">$29</div>
-              <p className="text-[10px] md:text-xs text-gray-500 mt-1">/month</p>
-              <Link href="/pricing">
-                <button
-                  disabled={isCurrentPlan('pro_plus')}
-                  className={`mt-4 w-full py-2 border rounded-lg text-xs md:text-sm font-medium transition-colors ${
-                    isCurrentPlan('pro_plus')
-                      ? 'border-green-500 bg-green-500 text-white cursor-default'
-                      : 'border-gray-900 bg-gray-900 text-white hover:bg-black cursor-pointer'
-                  }`}
-                >
-                  {isCurrentPlan('pro_plus') ? 'Current' : 'Go Pro Plus'}
-                </button>
-              </Link>
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {features.map((feature, index) => (
-            <tr key={index} className="hover:bg-gray-50/50 transition-colors">
-              {/* STICKY FEATURE NAME */}
-              <td className="sticky left-0 z-10 p-3 md:p-4 pl-4 md:pl-6 text-xs md:text-sm font-medium text-gray-700 bg-gray-50 border-r border-gray-100 shadow-[4px_0_10px_-5px_rgba(0,0,0,0.05)]">
-                <div className="flex items-center gap-2 max-w-[120px] md:max-w-none break-words">
-                  {feature.name}
-                </div>
-              </td>
+                    {/* Pro Header (Highlighted) */}
+                    <th className="relative p-4 md:p-6 min-w-[160px] md:min-w-[200px] text-center bg-[#FFFBF0] border-l border-r border-orange-200">
+                      <div className="absolute top-0 left-0 w-full bg-orange-400 h-1 md:h-1.5"></div>
+                      <span className="absolute top-2 md:top-3 left-1/2 -translate-x-1/2 bg-orange-100 text-orange-700 text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide whitespace-nowrap">
+                        Most Popular
+                      </span>
+                      <h3 className="text-lg md:text-xl font-serif text-gray-900 mt-2">Pro</h3>
+                      <div className="mt-2 text-2xl md:text-3xl font-bold font-sans text-gray-900">$9</div>
+                      <p className="text-[10px] md:text-xs text-gray-500 mt-1">/month</p>
+                      <Link href="/pricing">
+                        <button
+                          disabled={isCurrentPlan('pro')}
+                          className={`mt-4 w-full py-2 rounded-lg text-xs md:text-sm font-medium shadow-sm transition-colors ${
+                            isCurrentPlan('pro')
+                              ? 'bg-green-500 text-white cursor-default'
+                              : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
+                          }`}
+                        >
+                          {isCurrentPlan('pro') ? 'Current' : 'Start Pro'}
+                        </button>
+                      </Link>
+                    </th>
 
-              {/* Free Value */}
-              <td className="p-3 md:p-4 text-center text-sm text-gray-600">
-                {feature.free}
-              </td>
+                    {/* Pro Plus Header */}
+                    <th className="p-4 md:p-6 min-w-[160px] md:min-w-[200px] text-center">
+                      <h3 className="text-lg md:text-xl font-serif text-gray-900">Pro Plus</h3>
+                      <div className="mt-2 text-2xl md:text-3xl font-bold font-sans">$29</div>
+                      <p className="text-[10px] md:text-xs text-gray-500 mt-1">/month</p>
+                      <Link href="/pricing">
+                        <button
+                          disabled={isCurrentPlan('pro_plus')}
+                          className={`mt-4 w-full py-2 border rounded-lg text-xs md:text-sm font-medium transition-colors ${
+                            isCurrentPlan('pro_plus')
+                              ? 'border-green-500 bg-green-500 text-white cursor-default'
+                              : 'border-gray-900 bg-gray-900 text-white hover:bg-black cursor-pointer'
+                          }`}
+                        >
+                          {isCurrentPlan('pro_plus') ? 'Current' : 'Go Pro Plus'}
+                        </button>
+                      </Link>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {features.map((feature, index) => (
+                    <tr key={index} className="hover:bg-gray-50/50 transition-colors">
+                      {/* STICKY FEATURE NAME */}
+                      <td className="sticky left-0 z-10 p-3 md:p-4 pl-4 md:pl-6 text-xs md:text-sm font-medium text-gray-700 bg-gray-50 border-r border-gray-100 shadow-[4px_0_10px_-5px_rgba(0,0,0,0.05)]">
+                        <div className="flex items-center gap-2 max-w-[120px] md:max-w-none break-words">
+                          {feature.name}
+                        </div>
+                      </td>
 
-              {/* Pro Value (Highlighted) */}
-              <td className="p-3 md:p-4 text-center text-sm font-medium text-gray-900 bg-[#FFFBF0]/50 border-l border-r border-orange-100">
-                {feature.pro}
-              </td>
+                      {/* Free Value */}
+                      <td className="p-3 md:p-4 text-center text-sm text-gray-600">
+                        {feature.free}
+                      </td>
 
-              {/* Pro Plus Value */}
-              <td className="p-3 md:p-4 text-center text-sm text-gray-600">
-                {feature.proPlus}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+                      {/* Pro Value (Highlighted) */}
+                      <td className="p-3 md:p-4 text-center text-sm font-medium text-gray-900 bg-[#FFFBF0]/50 border-l border-r border-orange-100">
+                        {feature.pro}
+                      </td>
 
-    {/* Mobile Swipe Hint */}
-    <div className="p-3 bg-gray-50 border-t border-gray-200 text-center md:hidden flex items-center justify-center gap-2 text-xs text-gray-500 pointer-events-none">
-      <span className="animate-pulse">←</span>
-      Swipe to compare
-      <span className="animate-pulse">→</span>
-    </div>
-  </div>
-</div>
+                      {/* Pro Plus Value */}
+                      <td className="p-3 md:p-4 text-center text-sm text-gray-600">
+                        {feature.proPlus}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Swipe Hint */}
+            <div className="p-3 bg-gray-50 border-t border-gray-200 text-center md:hidden flex items-center justify-center gap-2 text-xs text-gray-500 pointer-events-none">
+              <span className="animate-pulse">←</span>
+              Swipe to compare
+              <span className="animate-pulse">→</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
