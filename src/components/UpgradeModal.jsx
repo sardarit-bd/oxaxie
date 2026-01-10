@@ -5,7 +5,6 @@ import { X, Zap } from "lucide-react";
 const UpgradeModal = ({ isOpen, onClose, currentPlan, upgradeTo, message }) => {
   if (!isOpen) return null;
 
-  // Format plan names
   const formatPlanName = (plan) => {
     if (!plan) return '';
     
