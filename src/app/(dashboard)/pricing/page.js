@@ -47,6 +47,7 @@ export default function PricingPage() {
       period: 'forever',
       description: 'Try our AI legal guidance',
       features: [
+        { text: 'Claude Sonnet 4.5', included: true },
         { text: '10 AI chat messages', included: true },
         { text: '1 document generation', included: true },
         { text: 'Basic legal templates', included: true },
@@ -66,6 +67,7 @@ export default function PricingPage() {
       description: 'For individuals with legal needs',
       popular: true,
       features: [
+        { text: 'Claude Sonnet 4.5', included: true },
         { text: '3 cases per month', included: true },
         { text: 'Document generation', included: true },
         { text: 'Download PDF & Word docs', included: true },
@@ -85,6 +87,7 @@ export default function PricingPage() {
       description: 'For power users & professionals',
       features: [
         { text: 'Everything in Pro', included: true },
+        { text: 'Claude Opus 4.5', included: true },
         { text: '10+ cases per month', included: true },
         { text: 'Top AI agent models', included: true },
         { text: 'Priority response times', included: true },

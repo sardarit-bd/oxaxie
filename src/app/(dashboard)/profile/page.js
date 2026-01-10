@@ -127,11 +127,11 @@ export default function Profile() {
   // Comparison Data
   const features = [
     { category: "Usage", name: "AI Chat Messages", free: "10 /mo", pro: "Unlimited", proPlus: "Unlimited" },
-    { category: "Usage", name: "Cases per month", free: "0", pro: "3", proPlus: "10+" },
-    { category: "Features", name: "Document Generation", free: "1 Doc", pro: "Standard", proPlus: "Advanced" },
-    { category: "Features", name: "Download Formats", free: "View Only", pro: "PDF & Word", proPlus: "PDF, Word, LaTeX" },
+    { category: "Usage", name: "Cases per month", free: "1 case", pro: "3", proPlus: "10+" },
+    { category: "Features", name: "Document Generation", free: "1 Doc", pro: "Unlimited", proPlus: "Unlimited" },
+    { category: "Features", name: "Download Document", free: <Minus className="w-4 h-4 text-gray-300 mx-auto"/>, pro: <Check className="w-4 h-4 text-green-600 mx-auto"/>, proPlus: <Check className="w-4 h-4 text-green-600 mx-auto"/> },
     { category: "Features", name: "Case History", free: <Minus className="w-4 h-4 text-gray-300 mx-auto"/>, pro: <Check className="w-4 h-4 text-green-600 mx-auto"/>, proPlus: <Check className="w-4 h-4 text-green-600 mx-auto"/> },
-    { category: "Features", name: "AI Model Quality", free: "Basic", pro: "Standard", proPlus: "GPT-4 / Claude 3" },
+    { category: "Features", name: "AI Model", free: "Cloude Sonnet 4.5", pro: "Cloude Sonnet 4.5", proPlus: "Cloude Opus 4.5" },
     { category: "Support", name: "Support Level", free: "Community", pro: "Email", proPlus: "Dedicated 24/7" },
     { category: "Support", name: "Response Time", free: "Standard", pro: "24 Hours", proPlus: "Priority" },
   ];
