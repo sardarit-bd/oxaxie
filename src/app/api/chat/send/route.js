@@ -26,7 +26,7 @@ export async function POST(req) {
     let effectiveCaseData = caseData;
     if (!effectiveCaseData && all_case_id) {
       console.log('Case data not provided, fetching from backend...');
-      const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000/api';
+      const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
       
       try {
         const caseResponse = await fetch(`${backendUrl}/case/${all_case_id}`, {
@@ -64,7 +64,7 @@ export async function POST(req) {
       })));
     }
 
-    const backendUrl = process.env.BACKEND_URL || 'http://localhost:8000/api';
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api';
     console.log('Backend URL:', backendUrl);
 
     const content = [];
