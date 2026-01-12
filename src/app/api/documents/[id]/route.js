@@ -12,7 +12,7 @@ export async function DELETE(req, { params }) {
     }
 
     const response = await fetch(
-      `${process.env.API_BASE_URL}/documents/${id}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/documents/${id}`,
       {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },

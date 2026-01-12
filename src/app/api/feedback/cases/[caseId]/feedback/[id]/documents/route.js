@@ -19,7 +19,7 @@ export async function POST(req, { params }) {
     console.log('Uploading documents to feedback:', feedbackId);
 
     const res = await fetch(
-      `${process.env.API_BASE_URL}/feedback/${feedbackId}/documents`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback/${feedbackId}/documents`,
       {
         method: 'POST',
         headers: {

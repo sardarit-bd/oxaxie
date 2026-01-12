@@ -17,7 +17,7 @@ export async function GET(req, { params }) {
     const { id } = params;
 
     const res = await fetch(
-      `${process.env.API_BASE_URL}/feedback/${id}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback/${id}`,
       {
         method: 'GET',
         headers: {
@@ -56,7 +56,7 @@ export async function PUT(req, { params }) {
     const body = await req.json();
 
     const res = await fetch(
-      `${process.env.API_BASE_URL}/feedback/${id}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback/${id}`,
       {
         method: 'PUT',
         headers: {
@@ -96,7 +96,7 @@ export async function DELETE(req, { params }) {
     const { id } = params;
 
     const res = await fetch(
-      `${process.env.API_BASE_URL}/feedback/${id}`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/feedback/${id}`,
       {
         method: 'DELETE',
         headers: {

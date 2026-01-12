@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     const response = await fetch(
-      `${process.env.API_BASE_URL}/user/subscription`,
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}/user/subscription`,
       {
         method: "GET",
         headers: {
