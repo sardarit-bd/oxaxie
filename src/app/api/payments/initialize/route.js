@@ -19,7 +19,7 @@ export async function POST(req) {
 
 
     // Forward request to Laravel API
-    const apiRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/payments/initialize`, {
+    const apiRes = await fetch(`${process.env.API_BASE_URL}/payments/initialize`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

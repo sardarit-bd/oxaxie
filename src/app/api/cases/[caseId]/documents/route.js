@@ -31,7 +31,7 @@ export async function GET(req, { params }) {
       }, { status: 400 });
     }
 
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/cases/${caseId}/documents`;
+    const backendUrl = `${process.env.API_BASE_URL}/cases/${caseId}/documents`;
     console.log('Calling backend URL:', backendUrl);
 
     const response = await fetch(backendUrl, {

@@ -37,7 +37,7 @@ export async function POST(request) {
       };
 
       try {
-        const saveUserMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/send`, {
+        const saveUserMsg = await fetch(`${process.env.API_BASE_URL}/chat/send`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -111,7 +111,7 @@ Always conclude responses by asking if they have any questions or if there's any
       };
 
       try {
-        const saveAiMsg = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/chat/send`, {
+        const saveAiMsg = await fetch(`${process.env.API_BASE_URL}/chat/send`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
