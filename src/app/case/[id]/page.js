@@ -997,10 +997,14 @@ const handleDownloadClick = (document, format = 'txt') => {
         </div>
 
         {/* Sidebar - Hidden on mobile */}
-        <div className="hidden lg:block w-80 bg-white border-l border-gray-200 p-6">
-          <h2 className="font-semibold text-lg mb-4">Case Summary</h2>
+        <div className="hidden lg:flex flex-col w-80 bg-white border-l border-gray-200">
+          {/* Header: Fixed */}
+          <div className="p-6 pb-4">
+            <h2 className="font-semibold text-lg">Case Summary</h2>
+          </div>
           
-          <div className="space-y-4 text-sm">
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto px-6 space-y-4 text-sm min-h-0">
             <div>
               <p className="text-gray-600 mb-1">Issue Type</p>
               <p className="font-medium">{formatIssueType(caseData.issue_type)}</p>
@@ -1018,11 +1022,15 @@ const handleDownloadClick = (document, format = 'txt') => {
             
             <div>
               <p className="text-gray-600 mb-1">Situation</p>
-              <p className="font-medium text-xs leading-relaxed">{caseData.situation_description}</p>
+              {/* This text will expand the container and trigger the scrollbar */}
+              <p className="font-medium text-xs leading-relaxed">
+                {caseData.situation_description}
+              </p>
             </div>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200">
+          {/* Disclaimer: Fixed at bottom */}
+          <div className="p-6 mt-auto border-t border-gray-200 bg-white">
             <p className="text-xs text-gray-600">
               <span className="font-semibold">Disclaimer:</span> This is educational legal information, not legal advice. For specific legal matters, consult a licensed attorney in your jurisdiction.
             </p>
