@@ -1,3 +1,5 @@
+'use client';
+
 import DashboardNavbar from "../../components/DashboardNavbar";
 import { cookies } from "next/headers";
 import { Toaster } from "sonner";
