@@ -1030,7 +1030,7 @@ const handleDownloadClick = (document, format = 'txt') => {
           </div>
 
           {/* Disclaimer: Fixed at bottom */}
-          <div className="p-6 mt-auto border-t border-gray-200 bg-white">
+          <div className="p-4 mt-auto border-t border-gray-200 bg-white">
             <p className="text-xs text-gray-600">
               <span className="font-semibold">Disclaimer:</span> This is educational legal information, not legal advice. For specific legal matters, consult a licensed attorney in your jurisdiction.
             </p>
