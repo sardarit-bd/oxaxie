@@ -392,22 +392,17 @@ const handleDownloadClick = (document, format = 'txt') => {
       return;
     }
 
-    console.log('🔍 Checking for pending feedback at:', new Date().toISOString());
-
     try {
       const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
         credentials: 'include',
       });
       
       const data = await response.json();
-      console.log('📥 Pending feedback API response:', data);
       
       if (data.success && data.data) {
-        console.log('✅ Found feedback ID:', data.data.id, 'sent_to_chat:', data.data.sent_to_chat);
         
         const feedback = data.data;
-        
-        // ✅ Mark as processed IMMEDIATELY to block duplicate
+      
         feedbackProcessed.current = true;
         
         const feedbackMessage = buildFeedbackMessage(feedback);
