@@ -936,7 +936,7 @@ const handleDownloadClick = (document, format = 'txt') => {
                             </div>
                           </div>
                           
-                          {/* <div className="p-4 bg-gray-50 rounded text-xs max-h-80 overflow-y-auto">
+                          <div className="p-4 bg-gray-50 rounded text-xs max-h-80 overflow-y-auto">
                             <ReactMarkdown
                               components={{
                                 h1: ({node, ...props}) => <h1 className="text-base font-bold mb-2 text-gray-900" {...props} />,
@@ -967,37 +967,6 @@ const handleDownloadClick = (document, format = 'txt') => {
                               <p className="text-xs text-gray-500 mt-3 italic text-center">
                                 Preview truncated • Download to view full document
                               </p>
-                            )}
-                          </div> */}
-                          <div className={`max-w-[75%] md:max-w-[70%] ${
-                            msg.role === 'user' 
-                              ? 'bg-[#F59F0A] text-black' 
-                              : 'bg-[#F0EEEA] text-gray-900'
-                          } rounded-lg px-3 py-2 text-xs md:text-sm leading-relaxed`}>
-                            {msg.role === 'user' ? (
-                              <ReactMarkdown
-                                components={{
-                                  strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
-                                  p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                                  ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
-                                  ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
-                                  li: ({node, ...props}) => <li className="mb-1" {...props} />
-                                }}
-                              >
-                                {msg.content}
-                              </ReactMarkdown>
-                            ) : (
-                              <ReactMarkdown
-                                components={{
-                                  strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
-                                  p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                                  ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
-                                  ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
-                                  li: ({node, ...props}) => <li className="mb-1" {...props} />
-                                }}
-                              >
-                                {msg.content}
-                              </ReactMarkdown>
                             )}
                           </div>
                         </div>
