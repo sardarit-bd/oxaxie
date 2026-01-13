@@ -27,7 +27,7 @@ export default function CaseChat() {
   const [isGenerating, setIsGenerating] = useState(false);
 
 
-  const [feedbackProcessed, setFeedbackProcessed] = useState(false);
+  const feedbackProcessed = useRef(false);
 
   const [userPlan, setUserPlan] = useState(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
@@ -356,10 +356,6 @@ const handleDownloadClick = (document, format = 'txt') => {
               setMessages(loadedMessages);
             }
             
-            setLoading(false);
-            
-            checkAndSendPendingFeedback();
-            return;
           } else {
             console.log('No messages found in response');
           }
@@ -370,56 +366,57 @@ const handleDownloadClick = (document, format = 'txt') => {
       } catch (msgError) {
         console.error('Message fetch error:', msgError);
       }
- 
-      console.log('Showing initial message');
-      setMessages([{
-        role: 'assistant',
-        content: generateInitialMessage(data),
-        timestamp: new Date().toISOString()
-      }]);
-      
-      checkAndSendPendingFeedback();
+
+      // If no messages were loaded, show initial message
+      if (messages.length === 0) {
+        console.log('Showing initial message');
+        setMessages([{
+          role: 'assistant',
+          content: generateInitialMessage(data),
+          timestamp: new Date().toISOString()
+        }]);
+      }
       
     } catch (err) {
       console.error('Error fetching case:', err);
       setError(err.message);
     } finally {
       setLoading(false);
+      checkAndSendPendingFeedback();
     }
   };
 
 
   const checkAndSendPendingFeedback = async () => {
-
-    if (feedbackProcessed) {
-      console.log('Feedback already processed, skipping...');
+    if (feedbackProcessed.current) {
+      console.log('⚠️ Feedback already processed, skipping...');
       return;
     }
 
+    console.log('🔍 Checking for pending feedback at:', new Date().toISOString());
+
     try {
-      console.log('=== Checking for Pending Feedback ===');
-      
       const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
         credentials: 'include',
       });
       
       const data = await response.json();
-      console.log('Pending feedback response:', data);
+      console.log('📥 Pending feedback API response:', data);
       
       if (data.success && data.data) {
+        console.log('✅ Found feedback ID:', data.data.id, 'sent_to_chat:', data.data.sent_to_chat);
+        
         const feedback = data.data;
-        console.log('Found pending feedback:', feedback);
-      
-        setFeedbackProcessed(true);
+        
+        // ✅ Mark as processed IMMEDIATELY to block duplicate
+        feedbackProcessed.current = true;
         
         const feedbackMessage = buildFeedbackMessage(feedback);
         console.log('Built feedback message:', feedbackMessage);
         
-  
         const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
         console.log('Messages array prepared:', messagesArray.length, 'messages');
         
-
         await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
       } else {
         console.log('No pending feedback found');

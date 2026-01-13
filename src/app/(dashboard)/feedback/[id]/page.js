@@ -80,6 +80,12 @@ export default function ResponseFeedbackForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setIsSubmitting(true);
     setError("");
 
