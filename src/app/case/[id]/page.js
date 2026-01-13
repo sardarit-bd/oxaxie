@@ -177,6 +177,7 @@ export default function CaseChat() {
   };
 
   // Handle download with plan check
+  // Handle download with plan check
 const handleDownloadClick = (document, format = 'txt') => {
   if (!canDownload()) {
     setUpgradeModal({
@@ -355,6 +356,10 @@ const handleDownloadClick = (document, format = 'txt') => {
               setMessages(loadedMessages);
             }
             
+            setLoading(false);
+            
+            checkAndSendPendingFeedback();
+            return;
           } else {
             console.log('No messages found in response');
           }
@@ -365,60 +370,61 @@ const handleDownloadClick = (document, format = 'txt') => {
       } catch (msgError) {
         console.error('Message fetch error:', msgError);
       }
-
-      // If no messages were loaded, show initial message
-      if (messages.length === 0) {
-        console.log('Showing initial message');
-        setMessages([{
-          role: 'assistant',
-          content: generateInitialMessage(data),
-          timestamp: new Date().toISOString()
-        }]);
-      }
+ 
+      console.log('Showing initial message');
+      setMessages([{
+        role: 'assistant',
+        content: generateInitialMessage(data),
+        timestamp: new Date().toISOString()
+      }]);
+      
+      checkAndSendPendingFeedback();
       
     } catch (err) {
       console.error('Error fetching case:', err);
       setError(err.message);
     } finally {
       setLoading(false);
-      checkAndSendPendingFeedback();
     }
   };
 
 
   const checkAndSendPendingFeedback = async () => {
-    if (feedbackProcessed.current) {
-      console.log('⚠️ Feedback already processed, skipping...');
-      return;
-    }
+  if (feedbackProcessed.current) {
+    console.log('⚠️ Feedback already processed, skipping...');
+    return;
+  }
 
-    try {
-      const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
-        credentials: 'include',
-      });
+  console.log('🔍 Checking for pending feedback at:', new Date().toISOString());
+
+  try {
+    const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
+      credentials: 'include',
+    });
+    
+    const data = await response.json();
+    console.log('📥 Pending feedback API response:', data);
+    
+    if (data.success && data.data) {
+      console.log('✅ Found feedback ID:', data.data.id, 'sent_to_chat:', data.data.sent_to_chat);
       
-      const data = await response.json();
+      const feedback = data.data;
+      feedbackProcessed.current = true;
       
-      if (data.success && data.data) {
-        
-        const feedback = data.data;
+      const feedbackMessage = buildFeedbackMessage(feedback);
+      console.log('Built feedback message:', feedbackMessage);
       
-        feedbackProcessed.current = true;
-        
-        const feedbackMessage = buildFeedbackMessage(feedback);
-        console.log('Built feedback message:', feedbackMessage);
-        
-        const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
-        console.log('Messages array prepared:', messagesArray.length, 'messages');
-        
-        await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
-      } else {
-        console.log('No pending feedback found');
-      }
-    } catch (error) {
-      console.error('Error checking pending feedback:', error);
+      const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
+      console.log('Messages array prepared:', messagesArray.length, 'messages');
+      
+      await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
+    } else {
+      console.log('No pending feedback found');
     }
-  };
+  } catch (error) {
+    console.error('Error checking pending feedback:', error);
+  }
+};
 
 
   const buildFeedbackMessage = (feedback) => {
@@ -430,7 +436,6 @@ const handleDownloadClick = (document, format = 'txt') => {
       'counter_offer': 'Counter-offer'
     };
 
-    // Format for ReactMarkdown with proper line breaks
     let message = `**Response Feedback Update**\n\n`;
     message += `**Response Type:** ${typeLabels[feedback.response_type]}\n\n`;
     message += `**Response Date:** ${new Date(feedback.response_date).toLocaleDateString()}\n\n`;
@@ -439,13 +444,13 @@ const handleDownloadClick = (document, format = 'txt') => {
       message += `**Original Action Date:** ${new Date(feedback.action_taken_date).toLocaleDateString()}\n\n`;
     }
     
-    message += `**Details:**\n\n${feedback.response_description}\n\n`;
+    message += `\n**Details:**\n${feedback.response_description}\n\n`;
 
     if (feedback.documents && feedback.documents.length > 0) {
-      message += `**Attached Documents:** ${feedback.documents.length} file(s)\n\n`;
+      message += `\n**Attached Documents:** ${feedback.documents.length} file(s)\n\n`;
     }
 
-    message += `Based on this response, what should be my next steps?`;
+    message += `\nBased on this response, what should be my next steps?`;
 
     return message;
   };
@@ -931,7 +936,7 @@ const handleDownloadClick = (document, format = 'txt') => {
                             </div>
                           </div>
                           
-                          <div className="p-4 bg-gray-50 rounded text-xs max-h-80 overflow-y-auto">
+                          {/* <div className="p-4 bg-gray-50 rounded text-xs max-h-80 overflow-y-auto">
                             <ReactMarkdown
                               components={{
                                 h1: ({node, ...props}) => <h1 className="text-base font-bold mb-2 text-gray-900" {...props} />,
@@ -962,6 +967,37 @@ const handleDownloadClick = (document, format = 'txt') => {
                               <p className="text-xs text-gray-500 mt-3 italic text-center">
                                 Preview truncated • Download to view full document
                               </p>
+                            )}
+                          </div> */}
+                          <div className={`max-w-[75%] md:max-w-[70%] ${
+                            msg.role === 'user' 
+                              ? 'bg-[#F59F0A] text-black' 
+                              : 'bg-[#F0EEEA] text-gray-900'
+                          } rounded-lg px-3 py-2 text-xs md:text-sm leading-relaxed`}>
+                            {msg.role === 'user' ? (
+                              <ReactMarkdown
+                                components={{
+                                  strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                                  p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                                  ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                                  ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                                  li: ({node, ...props}) => <li className="mb-1" {...props} />
+                                }}
+                              >
+                                {msg.content}
+                              </ReactMarkdown>
+                            ) : (
+                              <ReactMarkdown
+                                components={{
+                                  strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                                  p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                                  ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                                  ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                                  li: ({node, ...props}) => <li className="mb-1" {...props} />
+                                }}
+                              >
+                                {msg.content}
+                              </ReactMarkdown>
                             )}
                           </div>
                         </div>
