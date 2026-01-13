@@ -16,6 +16,7 @@ import {
   Ban,
   Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function CaseOutcomeForm() {
   const params = useParams();
@@ -25,6 +26,7 @@ export default function CaseOutcomeForm() {
   const [loading, setLoading] = useState(false);
   const [caseData, setCaseData] = useState(null);
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({});
   
   const [formData, setFormData] = useState({
     outcome_type: '',
@@ -79,13 +81,69 @@ export default function CaseOutcomeForm() {
 
   const isFormValid = formData.outcome_type && formData.outcome_summary && formData.date_resolved;
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setLoading(true);
+  //   setError('');
+
+  //   try {
+  //     // Calculate days to resolution
+  //     const caseCreatedDate = new Date(caseData.created_at);
+  //     const resolvedDate = new Date(formData.date_resolved);
+  //     const daysToResolution = Math.floor((resolvedDate - caseCreatedDate) / (1000 * 60 * 60 * 24));
+
+  //     const payload = {
+  //       all_case_id: caseId,
+  //       outcome_type: formData.outcome_type,
+  //       outcome_summary: formData.outcome_summary,
+  //       money_saved: formData.money_saved || null,
+  //       money_recovered: formData.money_recovered || null,
+  //       court_avoided: formData.court_avoided ?? false,
+  //       hired_attorney: formData.hired_attorney ?? false,
+  //       ai_helpfulness_rating: formData.ai_helpfulness_rating,
+  //       feedback_text: formData.feedback_text || null,
+  //       would_recommend: formData.would_recommend,
+  //       testimonial_consent: formData.testimonial_consent,
+  //       days_to_resolution: daysToResolution >= 0 ? daysToResolution : null
+  //     };
+
+  //     console.log('Submitting outcome:', payload);
+
+  //     const response = await fetch(`/api/case/${caseId}/outcome`, {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       credentials: 'include',
+  //       body: JSON.stringify(payload),
+  //     });
+
+  //     const data = await response.json();
+  //     console.log('Submission response:', data);
+
+  //     if (!response.ok) {
+  //       throw new Error(data.message || 'Failed to submit outcome');
+  //     }
+
+  //     if (data.success) {
+  //       toast.success('Case outcome submitted successfully!');
+  //       router.push('/dashboard');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error submitting outcome:', err);
+  //     setError(err.message || 'Failed to submit outcome. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setValidationErrors({});
 
     try {
-      // Calculate days to resolution
       const caseCreatedDate = new Date(caseData.created_at);
       const resolvedDate = new Date(formData.date_resolved);
       const daysToResolution = Math.floor((resolvedDate - caseCreatedDate) / (1000 * 60 * 60 * 24));
@@ -117,13 +175,25 @@ export default function CaseOutcomeForm() {
       });
 
       const data = await response.json();
+      console.log('Submission response:', data);
 
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to submit outcome');
+        if (response.status === 409) {
+          toast.error(data.message || 'Outcome already exists for this case');
+          return;
+        }
+
+        if (response.status === 422 && data.errors) {
+          setValidationErrors(data.errors);
+          setError(data.message || 'Please fix the validation errors below');
+        } else {
+          throw new Error(data.message || 'Failed to submit outcome');
+        }
+        return;
       }
 
       if (data.success) {
-        alert('Case outcome submitted successfully!');
+        toast.success('Case outcome submitted successfully!');
         router.push('/dashboard');
       }
     } catch (err) {
@@ -132,6 +202,16 @@ export default function CaseOutcomeForm() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const getFieldError = (fieldName) => {
+    const errors = validationErrors[fieldName];
+    return errors && errors.length > 0 ? errors[0] : null;
+  };
+
+  const hasFieldError = (fieldName) => {
+    const errors = validationErrors[fieldName];
+    return errors && errors.length > 0;
   };
 
   if (!caseData) {
@@ -151,9 +231,6 @@ export default function CaseOutcomeForm() {
               <Scale className="w-6 h-6" />
               <span className="font-semibold text-lg">Advocate</span>
             </div>
-            {/* <span className="text-gray-500 text-sm hidden sm:inline">
-              | {formatIssueType(caseData.issue_type)} • {caseData.location_city}
-            </span> */}
           </div>
           <Link href="/dashboard">
             <button className="flex items-center gap-1 text-gray-600 hover:text-gray-900 text-sm cursor-pointer">
@@ -202,15 +279,27 @@ export default function CaseOutcomeForm() {
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            {error}
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            {Object.keys(validationErrors).length > 0 ? (
+              <ul className="text-sm space-y-1">
+                {Object.entries(validationErrors).map(([field, errors]) => (
+                  errors.map((error, idx) => (
+                    <li key={`${field}-${idx}`}>
+                      {error}
+                    </li>
+                  ))
+                ))}
+              </ul>
+            ) : (
+              <div className="text-sm">{error}</div>
+            )}
           </div>
         )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-10">
           
-          {/* Step 1: Resolution Details */}
+          {/* Resolution Details */}
           <div className="space-y-4">
             <label className="text-sm font-medium text-gray-900 flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
@@ -232,6 +321,8 @@ export default function CaseOutcomeForm() {
                     className={`p-4 rounded-xl border-2 text-left transition-all duration-200 hover:border-yellow-500/80 cursor-pointer group ${
                       isSelected 
                         ? 'border-2 border-[#F59F0A] bg-[#FAF5ED]' 
+                        : hasFieldError('outcome_type')
+                        ? 'border-2 border-red-300 bg-white'
                         : 'border-2 border-gray-300/70 hover:border-gray-200 bg-white'
                     }`}
                   >
@@ -255,32 +346,34 @@ export default function CaseOutcomeForm() {
                     onChange={(e) => handleInputChange('date_resolved', e.target.value)}
                     min={caseData.created_at?.split('T')[0]}
                     max={new Date().toISOString().split('T')[0]}
-                    className="w-full pl-12 pr-4 py-3 md:py-4 rounded-xl border-2 border-gray-300/70 text-gray-900 bg-white placeholder:text-gray-400 focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors"
+                    className={`w-full pl-12 pr-4 py-3 md:py-4 rounded-xl border-2 ${
+                      hasFieldError('date_resolved')
+                        ? 'border-red-300 focus:border-red-500'
+                        : 'border-gray-300/70 focus:border-[#F59F0A]'
+                    } text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-0 transition-colors`}
                     required
                   />
                 </div>
               </div>
               <div className="col-span-1 md:col-span-2 space-y-2">
                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Outcome Summary</label>
-                {/* 
-                   FIXED: 
-                   1. Changed rows from 1 to 3 to accommodate wrapping text on mobile.
-                   2. Removed 'overflow-hidden' so placeholder doesn't get cut off.
-                   3. Removed fixed minHeight style, used Tailwind class instead.
-                */}
                 <textarea
                   rows={3}
                   value={formData.outcome_summary}
                   onChange={(e) => handleInputChange('outcome_summary', e.target.value)}
                   placeholder="Describe how the case ended in your own words..."
-                  className="w-full px-4 py-3 md:py-4 rounded-xl border-2 border-gray-300/70 text-gray-900 bg-white placeholder:text-gray-400 focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors resize-none min-h-[80px]"
+                  className={`w-full px-4 py-3 md:py-4 rounded-xl border-2 ${
+                    hasFieldError('outcome_summary') 
+                      ? 'border-red-300 focus:border-red-500' 
+                      : 'border-gray-300/70 focus:border-[#F59F0A]'
+                  } text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-0 transition-colors resize-none min-h-[80px]`}
                   required
                 />
               </div>
             </div>
           </div>
 
-          {/* Step 2: Impact & Financials */}
+          {/* Impact & Financials */}
           <div className="space-y-4">
             <label className="text-sm font-medium text-gray-900 flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
@@ -297,7 +390,11 @@ export default function CaseOutcomeForm() {
                   value={formData.money_saved}
                   onChange={(e) => handleInputChange('money_saved', e.target.value)}
                   placeholder="Money Saved (e.g. attorney fees)"
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-gray-300/70 text-gray-900 bg-white placeholder:text-gray-400 focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 ${
+                    hasFieldError('money_saved')
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300/70 focus:border-[#F59F0A]'
+                  } text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-0 transition-colors`}
                 />
               </div>
               <div className="relative">
@@ -307,7 +404,11 @@ export default function CaseOutcomeForm() {
                   value={formData.money_recovered}
                   onChange={(e) => handleInputChange('money_recovered', e.target.value)}
                   placeholder="Money Recovered (e.g. deposit)"
-                  className="w-full pl-12 pr-4 py-4 rounded-xl border-2 border-gray-300/70 text-gray-900 bg-white placeholder:text-gray-400 focus:border-[#F59F0A] focus:outline-none focus:ring-0 transition-colors"
+                  className={`w-full pl-12 pr-4 py-4 rounded-xl border-2 ${
+                    hasFieldError('money_recovered')
+                      ? 'border-red-300 focus:border-red-500'
+                      : 'border-gray-300/70 focus:border-[#F59F0A]'
+                  } text-gray-900 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-0 transition-colors`}
                 />
               </div>
             </div>
@@ -362,7 +463,7 @@ export default function CaseOutcomeForm() {
             </div>
           </div>
 
-          {/* Step 3: Feedback */}
+          {/* Feedback */}
           <div className="space-y-4">
             <label className="text-sm font-medium text-gray-900 flex items-center gap-2">
               <span className="w-6 h-6 rounded-full bg-black text-white text-xs flex items-center justify-center font-semibold shrink-0">
