@@ -177,7 +177,6 @@ export default function CaseChat() {
   };
 
   // Handle download with plan check
-  // Handle download with plan check
 const handleDownloadClick = (document, format = 'txt') => {
   if (!canDownload()) {
     setUpgradeModal({
@@ -436,21 +435,22 @@ const handleDownloadClick = (document, format = 'txt') => {
       'counter_offer': 'Counter-offer'
     };
 
-    let message = `📋 **Response Feedback Update**\n\n`;
-    message += `**Response Type:** ${typeLabels[feedback.response_type]}\n`;
-    message += `**Response Date:** ${new Date(feedback.response_date).toLocaleDateString()}\n`;
+    // Format for ReactMarkdown with proper line breaks
+    let message = `**Response Feedback Update**\n\n`;
+    message += `**Response Type:** ${typeLabels[feedback.response_type]}\n\n`;
+    message += `**Response Date:** ${new Date(feedback.response_date).toLocaleDateString()}\n\n`;
     
     if (feedback.action_taken_date) {
-      message += `**Original Action Date:** ${new Date(feedback.action_taken_date).toLocaleDateString()}\n`;
+      message += `**Original Action Date:** ${new Date(feedback.action_taken_date).toLocaleDateString()}\n\n`;
     }
     
-    message += `\n**Details:**\n${feedback.response_description}\n`;
+    message += `**Details:**\n\n${feedback.response_description}\n\n`;
 
     if (feedback.documents && feedback.documents.length > 0) {
-      message += `\n**Attached Documents:** ${feedback.documents.length} file(s)\n`;
+      message += `**Attached Documents:** ${feedback.documents.length} file(s)\n\n`;
     }
 
-    message += `\nBased on this response, what should be my next steps?`;
+    message += `Based on this response, what should be my next steps?`;
 
     return message;
   };
@@ -791,7 +791,17 @@ const handleDownloadClick = (document, format = 'txt') => {
                         : 'bg-[#F0EEEA] text-gray-900'
                     } rounded-lg px-3 py-2 text-xs md:text-sm leading-relaxed`}>
                       {msg.role === 'user' ? (
-                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                        <ReactMarkdown
+                          components={{
+                            strong: ({node, ...props}) => <strong className="font-semibold" {...props} />,
+                            p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                            ul: ({node, ...props}) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                            ol: ({node, ...props}) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                            li: ({node, ...props}) => <li className="mb-1" {...props} />
+                          }}
+                        >
+                          {msg.content}
+                        </ReactMarkdown>
                       ) : (
                         <ReactMarkdown
                           components={{
