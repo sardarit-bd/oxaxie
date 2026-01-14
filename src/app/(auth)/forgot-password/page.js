@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react'; // Added Suspense import
 import { Scale, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
-export default function ForgotPasswordPage() {
+
+function ForgotPasswordForm() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -37,7 +38,6 @@ export default function ForgotPasswordPage() {
         throw data;
       }
 
-      // Success - Show toast and redirect
       toast.success('Password reset link sent!', {
         description: 'Check your email for the reset link.',
         duration: 4000,
@@ -45,8 +45,6 @@ export default function ForgotPasswordPage() {
       
     } catch (err) {
       console.error('Forgot Password error:', err);
-      
-      // Show error toast
       if (err.status === 429) {
         toast.error('Too many requests. Please try again later.');
       } else if (err.errors?.email) {
@@ -135,5 +133,14 @@ export default function ForgotPasswordPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <ForgotPasswordForm />
+    </Suspense>
   );
 }
