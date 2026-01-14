@@ -222,7 +222,7 @@ export default function PricingPage() {
             Questions about which plan is right for you?
           </p>
           <button className="bg-gray-50 font-semibold border border-gray-300 hover:bg-[#F09C0E] text-gray-800 font-medium px-6 py-2 rounded-xl transition-colors text-sm cursor-pointer">
-            Contact Us
+            <a href='/contact'>Contact Us</a>
           </button>
         </div>
       </div>
