@@ -1,10 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Send, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function ContactPage() {
+    // State for dynamic contact info
+    const [contactInfo, setContactInfo] = useState({
+        phone: '',
+        email: '',
+        address: '',
+        twitter_url: '',
+        instagram_url: '',
+        linkedin_url: ''
+    });
+    const [loadingInfo, setLoadingInfo] = useState(true);
+
+    // Form State
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -13,6 +25,25 @@ export default function ContactPage() {
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Fetch Contact Info on Mount
+    useEffect(() => {
+        const fetchContactInfo = async () => {
+            try {
+                const res = await fetch('/api/contact');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data) setContactInfo(data);
+                }
+            } catch (error) {
+                console.error("Failed to load contact info", error);
+            } finally {
+                setLoadingInfo(false);
+            }
+        };
+
+        fetchContactInfo();
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -83,23 +114,26 @@ export default function ContactPage() {
                                     <Phone className="w-6 h-6 text-blue-400 mt-1" />
                                     <div>
                                         <p className="font-medium">Phone</p>
-                                        <p className="text-gray-300">+1 (555) 123-4567</p>
+                                        <p className="text-gray-300">
+                                            {loadingInfo ? 'Loading...' : (contactInfo.phone || '+1 (555) 123-4567')}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-start space-x-4">
                                     <Mail className="w-6 h-6 text-blue-400 mt-1" />
                                     <div>
                                         <p className="font-medium">Email</p>
-                                        <p className="text-gray-300">hello@example.com</p>
+                                        <p className="text-gray-300">
+                                            {loadingInfo ? 'Loading...' : (contactInfo.email || 'hello@example.com')}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-start space-x-4">
                                     <MapPin className="w-6 h-6 text-blue-400 mt-1" />
                                     <div>
                                         <p className="font-medium">Address</p>
-                                        <p className="text-gray-300">
-                                            123 Innovation Dr,<br />
-                                            Tech City, TC 90210
+                                        <p className="text-gray-300 whitespace-pre-line">
+                                            {loadingInfo ? 'Loading...' : (contactInfo.address || '123 Innovation Dr,\nTech City, TC 90210')}
                                         </p>
                                     </div>
                                 </div>
@@ -108,13 +142,33 @@ export default function ContactPage() {
 
                         <div className="relative z-10 mt-12">
                             <div className="flex space-x-4">
-                                <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-blue-600 transition-colors duration-300">
+                                {/* Twitter / X */}
+                                <a 
+                                    href={contactInfo.twitter_url || "#"} 
+                                    target={contactInfo.twitter_url ? "_blank" : "_self"}
+                                    rel="noopener noreferrer"
+                                    className={`p-2 bg-gray-800 rounded-full hover:bg-blue-600 transition-colors duration-300 ${!contactInfo.twitter_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
+                                >
                                     <Twitter className="w-5 h-5" />
                                 </a>
-                                <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-pink-600 transition-colors duration-300">
+
+                                {/* Instagram */}
+                                <a 
+                                    href={contactInfo.instagram_url || "#"} 
+                                    target={contactInfo.instagram_url ? "_blank" : "_self"}
+                                    rel="noopener noreferrer"
+                                    className={`p-2 bg-gray-800 rounded-full hover:bg-pink-600 transition-colors duration-300 ${!contactInfo.instagram_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
+                                >
                                     <Instagram className="w-5 h-5" />
                                 </a>
-                                <a href="#" className="p-2 bg-gray-800 rounded-full hover:bg-blue-700 transition-colors duration-300">
+
+                                {/* LinkedIn */}
+                                <a 
+                                    href={contactInfo.linkedin_url || "#"} 
+                                    target={contactInfo.linkedin_url ? "_blank" : "_self"}
+                                    rel="noopener noreferrer"
+                                    className={`p-2 bg-gray-800 rounded-full hover:bg-blue-700 transition-colors duration-300 ${!contactInfo.linkedin_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
+                                >
                                     <Linkedin className="w-5 h-5" />
                                 </a>
                             </div>
