@@ -16,7 +16,7 @@ export default function Footer() {
                         <a href="#" className="hover:text-white text-gray-300/80 transition-colors">How It Works</a>
                         <a href="#" className="hover:text-white text-gray-300/80 transition-colors">Privacy</a>
                         <a href="#" className="hover:text-white text-gray-300/80 transition-colors">Terms</a>
-                        <a href="#" className="hover:text-white text-gray-300/80 transition-colors">Contact</a>
+                        <a href="/contact" className="hover:text-white text-gray-300/80 transition-colors">Contact</a>
                     </nav>
                     </div>
 
