@@ -147,7 +147,7 @@ export default function ContactPage() {
                                     href={contactInfo.twitter_url || "#"} 
                                     target={contactInfo.twitter_url ? "_blank" : "_self"}
                                     rel="noopener noreferrer"
-                                    className={`p-2 bg-gray-800 rounded-full hover:bg-blue-600 transition-colors duration-300 ${!contactInfo.twitter_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
+                                    className={`p-2 bg-gray-800 rounded-full hover:bg-blue-600 transition-colors duration-300 cursor-pointer ${!contactInfo.twitter_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
                                 >
                                     <Twitter className="w-5 h-5" />
                                 </a>
@@ -157,7 +157,7 @@ export default function ContactPage() {
                                     href={contactInfo.instagram_url || "#"} 
                                     target={contactInfo.instagram_url ? "_blank" : "_self"}
                                     rel="noopener noreferrer"
-                                    className={`p-2 bg-gray-800 rounded-full hover:bg-pink-600 transition-colors duration-300 ${!contactInfo.instagram_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
+                                    className={`p-2 bg-gray-800 rounded-full hover:bg-pink-600 transition-colors duration-300 cursor-pointer ${!contactInfo.instagram_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
                                 >
                                     <Instagram className="w-5 h-5" />
                                 </a>
@@ -167,7 +167,7 @@ export default function ContactPage() {
                                     href={contactInfo.linkedin_url || "#"} 
                                     target={contactInfo.linkedin_url ? "_blank" : "_self"}
                                     rel="noopener noreferrer"
-                                    className={`p-2 bg-gray-800 rounded-full hover:bg-blue-700 transition-colors duration-300 ${!contactInfo.linkedin_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
+                                    className={`p-2 bg-gray-800 rounded-full hover:bg-blue-700 transition-colors duration-300 cursor-pointer ${!contactInfo.linkedin_url && !loadingInfo ? 'opacity-50 cursor-default' : ''}`}
                                 >
                                     <Linkedin className="w-5 h-5" />
                                 </a>
