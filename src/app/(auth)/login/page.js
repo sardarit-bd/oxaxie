@@ -95,9 +95,16 @@ function LoginForm() {
 
         {/* Password Field */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-[#1a1a1a] mb-2 text-slate-700 font-semibold">
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-[#1a1a1a] text-slate-700 font-semibold">
+              Password
+            </label>
+            <Link href="/forgot-password">
+              <button type="button" className="text-sm text-[#f59e0b] hover:text-[#ea950a] font-medium transition-colors cursor-pointer">
+                Forgot password?
+              </button>
+            </Link>
+          </div>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}
