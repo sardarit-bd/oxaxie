@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Send, Instagram, Twitter, Linkedin } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Instagram, Twitter, Linkedin, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function ContactPage() {
     // State for dynamic contact info
@@ -83,6 +84,16 @@ export default function ContactPage() {
         <div className="min-h-screen bg-[#f8f9fa] text-[#2d3748] font-sans selection:bg-blue-100">
             {/* Main Container */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20">
+
+                {/* Back button */}
+                <div className="mb-8">
+                <Link href="/">
+                    <button className="flex items-center text-gray-600 hover:text-gray-800 text-sm cursor-pointer">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to home
+                    </button>
+                </Link>
+                </div>
                 
                 <div className="text-center mb-16">
                     <h1 className="text-4xl md:text-5xl tracking-tight mb-4 text-[#1a202c] font-serif">
