@@ -1,4 +1,3 @@
-// components/DemoCaseChat.js
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -8,10 +7,7 @@ import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 
 export default function DemoCaseChat() {
-  // Since this is a demo, we grab the ID but use mock data
   const params = useParams();
-  // In a real scenario, you might match params.id to specific mock cases, 
-  // but for a general demo, we'll just use static mock data.
 
   const [activeTab, setActiveTab] = useState('chat');
   const [message, setMessage] = useState('');

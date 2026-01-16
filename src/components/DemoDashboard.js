@@ -1,4 +1,4 @@
-// components/DemoDashboard.js
+
 'use client';
 
 import { Plus, FileText, MessageSquare, Clock, ChevronRight, Eye, X } from 'lucide-react';
