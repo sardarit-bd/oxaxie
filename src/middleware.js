@@ -22,11 +22,14 @@ export default async function middleware(req) {
     // Check token validity
     const decoded = token ? await verifyJWT(token) : null;
 
-    // Protected routes
-    const protectedRoutes = ['/dashboard'];
+    if (path.startsWith("/case/demo")) {
+        return NextResponse.next();
+    }
+
+    const protectedRoutes = ['/new-case', '/case/']; 
     const isProtected = protectedRoutes.some(route => path.startsWith(route));
 
-    // If not logged in but trying to access protected routes
+    // If not logged in but trying to access PROTECTED routes (not dashboard)
     if (!decoded && isProtected) {
         const res = NextResponse.redirect(new URL("/login", req.nextUrl));
         
@@ -41,8 +44,10 @@ export default async function middleware(req) {
         return res;
     }
 
-    // Role-based access
+    // Role-based access (If you have sub-routes like /dashboard/admin or /dashboard/user)
     if (decoded && role) {
+        // If you have specific sub-routes that differ by role, keep this logic.
+        // Otherwise, this won't affect the main /dashboard page.
         if (role === "admin" && path.startsWith("/dashboard/user")) {
             return NextResponse.redirect(new URL("/dashboard/admin", req.nextUrl));
         }
@@ -59,6 +64,7 @@ export default async function middleware(req) {
             "user": "/dashboard/user",
         };
         
+        // Default to /dashboard if role isn't strictly admin/user or we just want them on the main dash
         const redirectPath = redirects[role] || "/dashboard";
         return NextResponse.redirect(new URL(redirectPath, req.nextUrl));
     }
@@ -67,5 +73,7 @@ export default async function middleware(req) {
 }
 
 export const config = {
+    // This regex keeps middleware running on all pages EXCEPT static files and API routes
+    // This is fine, because we removed '/dashboard' from the protection logic above.
     matcher: ["/((?!api|_next/static|_next/image|.*\\.png$).*)"],
 };
