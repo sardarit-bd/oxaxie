@@ -100,6 +100,16 @@ export default function CaseChat() {
   const handleGenerateDocument = async (documentType) => {
     if (isGenerating) return;
     
+    // Check document limit before generating
+    if (isDocumentLimitReached()) {
+      setUpgradeModal({
+        isOpen: true,
+        message: 'You have reached your document generation limit for this month. Upgrade to Pro for unlimited document generation.',
+        upgradeTo: 'pro'
+      });
+      return;
+    }
+    
     setIsGenerating(true);
 
     try {
@@ -315,6 +325,45 @@ export default function CaseChat() {
     };
     return planNames[plan] || 'Free Trial';
   };
+
+  // Check if message limit reached
+  const isMessageLimitReached = () => {
+    if (!usageData || !userPlan) return false;
+    
+    const limits = getUsageLimits();
+    
+    // Unlimited plans
+    if (limits.messages === -1) return false;
+    
+    // Check if used >= limit
+    return (usageData.messages_used || 0) >= limits.messages;
+  };
+
+  // Check if document limit reached
+  const isDocumentLimitReached = () => {
+    if (!usageData || !userPlan) return false;
+    
+    const limits = getUsageLimits();
+    
+    // Unlimited plans
+    if (limits.documents === -1) return false;
+    
+    // Check if used >= limit
+    return (usageData.documents_used || 0) >= limits.documents;
+  };
+
+  // Show upgrade modal on page load if limit reached
+  useEffect(() => {
+    if (!isLoadingUsage && usageData && userPlan) {
+      if (isMessageLimitReached()) {
+        setUpgradeModal({
+          isOpen: true,
+          message: 'You have reached your message limit for this month. Upgrade to Pro for unlimited messages and continue getting legal assistance.',
+          upgradeTo: 'pro'
+        });
+      }
+    }
+  }, [isLoadingUsage, usageData, userPlan]);
 
   const handleDownloadClick = (document, format = 'txt') => {
     if (!canDownload()) {
@@ -748,6 +797,16 @@ export default function CaseChat() {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
+    // Check message limit
+    if (isMessageLimitReached()) {
+      setUpgradeModal({
+        isOpen: true,
+        message: 'You have reached your message limit. Upgrade to Pro for unlimited messages.',
+        upgradeTo: 'pro'
+      });
+      return;
+    }
+    
     if (!message.trim() || isSending) return;
 
     const userMessage = message.trim();
@@ -863,6 +922,10 @@ export default function CaseChat() {
                 <>
                   <span className="text-gray-700">
                     {getRemainingUsage().messages} messages, {getRemainingUsage().documents} document remaining
+                  </span>
+                  {/* Debug info - remove after testing */}
+                  <span className="text-xs text-gray-500 ml-2">
+                    (Debug: {usageData ? 'Has Data' : 'No Data'})
                   </span>
                 </>
               )}
