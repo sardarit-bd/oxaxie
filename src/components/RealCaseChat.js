@@ -9,6 +9,7 @@ import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import ConfirmDialog from '@/components/custom/ConfirmDialog';
 import UpgradeModal from '@/components/UpgradeModal';
+import CreditPurchaseModal from '@/components/CreditPurchaseModal';
 
 export default function CaseChat() {
   const params = useParams();
@@ -40,6 +41,13 @@ export default function CaseChat() {
     message: '',
     upgradeTo: 'pro'
   })
+
+  const [creditModal, setCreditModal] = useState({
+    isOpen: false,
+    message: '',
+    creditOptions: [5, 10, 20],
+    availableCredits: 0
+  });
 
   useEffect(() => {
     if (caseId && activeTab === 'documents') {
@@ -842,8 +850,17 @@ export default function CaseChat() {
         const errorData = await response.json();
         console.error('API Error:', errorData);
         
-        // ✅ CHECK FOR UPGRADE REQUIRED ERROR (when blocked)
         if (errorData.errors?.upgrade_required) {
+          if (errorData.errors.can_purchase_credits) {
+            setCreditModal({
+              isOpen: true,
+              message: errorData.message || 'You need to purchase credits to continue.',
+              creditOptions: errorData.errors.credit_options || [5, 10, 20],
+              availableCredits: errorData.errors.credits_available || 0
+            });
+            return;
+          }
+
           setUpgradeModal({
             isOpen: true,
             message: errorData.message || 'You have reached your usage limit.',
@@ -874,20 +891,23 @@ export default function CaseChat() {
         console.log('⚠️ Critical Warning Detected:', warning);
         
         if (warning.type === 'upgrade_needed') {
+          // Show upgrade modal
           setUpgradeModal({
             isOpen: true,
             message: warning.message,
             upgradeTo: warning.upgrade_to
           });
         } else if (warning.type === 'credits_needed') {
-          setUpgradeModal({
+          // ✅ Show CREDIT modal, NOT upgrade modal
+          setCreditModal({
             isOpen: true,
-            message: warning.message + '\n\nCredit options: $5, $10, or $20',
-            upgradeTo: 'credits'
+            message: warning.message,
+            creditOptions: warning.credit_options || [5, 10, 20],
+            availableCredits: warning.credits_available || 0
           });
         }
       }
-      
+            
       // Refresh usage data after sending message
       fetchUserData(true);
       
@@ -997,12 +1017,12 @@ export default function CaseChat() {
 
       {/* Pro Plus Plan Notification */}
       {userPlan === 'pro_plus' && (
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-4 md:px-6 py-2.5">
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-4 md:px-6 py-2.5 border-b border-orange-100">
           <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
             <Sparkles className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span className="font-bold text-white text-sm">Pro Plus Plan:</span>
-            <span className="text-gray-200 text-sm">
-              All features unlocked • Unlimited access
+            <span className="font-bold text-sm">Pro Plus Plan:</span>
+            <span className=" text-sm">
+              All features unlocked
             </span>
           </div>
         </div>
@@ -1341,6 +1361,15 @@ export default function CaseChat() {
         currentPlan={userPlan || 'free'}
         upgradeTo={upgradeModal.upgradeTo}
         message={upgradeModal.message}
+      />
+
+
+      <CreditPurchaseModal
+        isOpen={creditModal.isOpen}
+        onClose={() => setCreditModal({ ...creditModal, isOpen: false })}
+        message={creditModal.message}
+        creditOptions={creditModal.creditOptions}
+        availableCredits={creditModal.availableCredits}
       />
 
     </div>
