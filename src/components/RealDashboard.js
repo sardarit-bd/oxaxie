@@ -131,7 +131,7 @@ export default function RealDashboard() {
                         <FileText size={36} className="text-gray-400 mx-auto mb-4" />
                         <h2 className="text-2xl font-semibold text-gray-900 mb-3">No cases yet</h2>
                         <p className="text-gray-600 mb-8">Start by creating a new case to get legal guidance.</p>
-                        <button onClick={handleNewCase} className="bg-[#FF9500] hover:bg-[#FFA70A] text-white font-semibold px-6 py-3 rounded-lg shadow-sm cursor-pointer">Create First Case</button>
+                        <button onClick={handleNewCase} className="bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-semibold px-6 py-2 rounded-lg shadow-sm cursor-pointer">Create First Case</button>
                     </div>
                 ) : (
                     <div className="space-y-4">
