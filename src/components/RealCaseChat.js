@@ -794,6 +794,7 @@ export default function CaseChat() {
     return types[issueType] || issueType.replace(/_/g, ' ');
   };
 
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     
@@ -840,6 +841,17 @@ export default function CaseChat() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API Error:', errorData);
+        
+        // ✅ CHECK FOR UPGRADE REQUIRED ERROR (when blocked)
+        if (errorData.errors?.upgrade_required) {
+          setUpgradeModal({
+            isOpen: true,
+            message: errorData.message || 'You have reached your usage limit.',
+            upgradeTo: errorData.errors.upgrade_to || 'pro'
+          });
+          return;
+        }
+        
         throw new Error(errorData.message || 'Failed to get AI response');
       }
 
@@ -856,6 +868,25 @@ export default function CaseChat() {
       };
       
       setMessages(prev => [...prev, aiMessage]);
+      
+      if (data.data?.critical_warning) {
+        const warning = data.data.critical_warning;
+        console.log('⚠️ Critical Warning Detected:', warning);
+        
+        if (warning.type === 'upgrade_needed') {
+          setUpgradeModal({
+            isOpen: true,
+            message: warning.message,
+            upgradeTo: warning.upgrade_to
+          });
+        } else if (warning.type === 'credits_needed') {
+          setUpgradeModal({
+            isOpen: true,
+            message: warning.message + '\n\nCredit options: $5, $10, or $20',
+            upgradeTo: 'credits'
+          });
+        }
+      }
       
       // Refresh usage data after sending message
       fetchUserData(true);
@@ -875,7 +906,6 @@ export default function CaseChat() {
       setIsSending(false);
     }
   };
-
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
