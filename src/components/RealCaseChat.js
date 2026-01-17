@@ -1,7 +1,8 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Scale, ArrowLeft, Send, Bot, FileText, Plus, User, Download, Trash2, Lock } from 'lucide-react';
+import { Scale, ArrowLeft, Send, Bot, FileText, Plus, User, Download, Trash2, Lock, Sparkles, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
@@ -26,11 +27,13 @@ export default function CaseChat() {
   const [caseDocuments, setCaseDocuments] = useState([]);
   const [isGenerating, setIsGenerating] = useState(false);
 
-
   const feedbackProcessed = useRef(false);
 
   const [userPlan, setUserPlan] = useState(null);
   const [isLoadingPlan, setIsLoadingPlan] = useState(true);
+  const [usageData, setUsageData] = useState(null);
+  const [isLoadingUsage, setIsLoadingUsage] = useState(true);
+  const [isRefreshingUsage, setIsRefreshingUsage] = useState(false);
 
   const [upgradeModal, setUpgradeModal] = useState({
     isOpen: false,
@@ -54,7 +57,6 @@ export default function CaseChat() {
         credentials: 'include'
       });
 
-      
       const text = await response.text();
       
       let data;
@@ -95,65 +97,123 @@ export default function CaseChat() {
     }
   };
 
- const handleGenerateDocument = async (documentType) => {
-  if (isGenerating) return;
-  
-  setIsGenerating(true);
+  const handleGenerateDocument = async (documentType) => {
+    if (isGenerating) return;
+    
+    setIsGenerating(true);
 
-  try {
-    const response = await fetch('/api/documents/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
-        all_case_id: caseId,
-        document_type: documentType
-      })
-    });
+    try {
+      const response = await fetch('/api/documents/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          all_case_id: caseId,
+          document_type: documentType
+        })
+      });
 
-    const data = await response.json();
-    console.log('Generate document response:', data);
+      const data = await response.json();
+      console.log('Generate document response:', data);
 
-    if (!response.ok || !data.success) {
-      if (data.errors?.upgrade_required) {
-        // Show upgrade modal instead of toast
-        setUpgradeModal({
-          isOpen: true,
-          message: data.message,
-          upgradeTo: data.errors.upgrade_to || 'pro'
-        });
-      } else {
-        toast.error(data.message || 'Failed to generate document.');
+      if (!response.ok || !data.success) {
+        if (data.errors?.upgrade_required) {
+          setUpgradeModal({
+            isOpen: true,
+            message: data.message,
+            upgradeTo: data.errors.upgrade_to || 'pro'
+          });
+        } else {
+          toast.error(data.message || 'Failed to generate document.');
+        }
+        setIsGenerating(false);
+        return;
       }
+
+      if (data.success) {
+        setActiveTab('documents');
+        
+        setTimeout(() => {
+          fetchDocuments();
+        }, 100);
+        
+        toast.success('Document generated successfully!');
+        
+        // Refresh usage data after generating document
+        fetchUsageData();
+      }
+    } catch (error) {
+      console.error('Error generating document:', error);
+      toast.error('Error generating document. Please try again.');
+    } finally {
       setIsGenerating(false);
-      return;
     }
+  };
 
-    if (data.success) {
-      setActiveTab('documents');
-      
-      setTimeout(() => {
-        fetchDocuments();
-      }, 100);
-      
-      toast.success('Document generated successfully!');
-    }
-  } catch (error) {
-    console.error('Error generating document:', error);
-    toast.error('Error generating document. Please try again.');
-  } finally {
-    setIsGenerating(false);
-  }
-};
-
-  
-
-  // Fetch user plan on mount
+  // Fetch user plan and usage on mount
   useEffect(() => {
-    fetchUserPlan();
+    fetchUserData();
   }, []);
 
+  const fetchUserData = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setIsRefreshingUsage(true);
+      }
+      
+      console.log('=== Fetching User Data ===');
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      console.log('Auth response status:', response.status);
+
+      if (!response.ok) {
+        console.log('Response not OK');
+        setUserPlan('free');
+        setIsLoadingPlan(false);
+        setIsLoadingUsage(false);
+        return;
+      }
+
+      const data = await response.json();
+      console.log('Auth response data:', data);
+
+      const userData = data.user?.data || data.data;
+      console.log('Extracted user data:', userData);
+      
+      if (data.success && userData) {
+        // Set plan
+        const plan = userData.subscription?.plan_tier || 'free';
+        console.log('User plan:', plan);
+        setUserPlan(plan);
+        
+        // Set usage data
+        if (userData.usage) {
+          console.log('User usage data:', userData.usage);
+          console.log('Messages used:', userData.usage.messages_used);
+          console.log('Documents used:', userData.usage.documents_used);
+          console.log('Cases used:', userData.usage.cases_used);
+          setUsageData(userData.usage);
+        } else {
+          console.log('No usage data in response');
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      setUserPlan('free');
+    } finally {
+      setIsLoadingPlan(false);
+      setIsLoadingUsage(false);
+      if (isRefresh) {
+        setIsRefreshingUsage(false);
+      }
+    }
+  };
+
   const fetchUserPlan = async () => {
+    // This function can be removed if not used elsewhere
     try {
       const response = await fetch('/api/user/subscription', {
         credentials: 'include'
@@ -165,9 +225,42 @@ export default function CaseChat() {
       }
     } catch (error) {
       console.error('Error fetching user plan:', error);
-      setUserPlan('free'); // Default to free on error
+      setUserPlan('free');
     } finally {
       setIsLoadingPlan(false);
+    }
+  };
+
+  const fetchUsageData = async () => {
+    try {
+      console.log('=== Fetching Usage Data ===');
+      const response = await fetch('/api/usage/summary', {
+        credentials: 'include'
+      });
+      
+      console.log('Usage API response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Usage API full response:', data);
+        
+        if (data.success) {
+          // Handle different possible data structures
+          const usageInfo = data.data || data;
+          console.log('Extracted usage info:', usageInfo);
+          setUsageData(usageInfo);
+        } else {
+          console.error('Usage API returned success: false');
+        }
+      } else {
+        console.error('Usage API failed with status:', response.status);
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+      }
+    } catch (error) {
+      console.error('Error fetching usage data:', error);
+    } finally {
+      setIsLoadingUsage(false);
     }
   };
 
@@ -176,28 +269,68 @@ export default function CaseChat() {
     return userPlan !== 'free';
   };
 
-  // Handle download with plan check
-  // Handle download with plan check
-const handleDownloadClick = (document, format = 'txt') => {
-  if (!canDownload()) {
-    setUpgradeModal({
-      isOpen: true,
-      message: 'Document downloads are not available on the Free plan. Upgrade to Pro to download your documents.',
-      upgradeTo: 'pro'
+  // Get usage limits based on plan
+  const getUsageLimits = () => {
+    const limits = {
+      free: { messages: 10, documents: 1, cases: 1 },
+      pro: { messages: -1, documents: -1, cases: 3 },
+      pro_plus: { messages: -1, documents: -1, cases: 10 }
+    };
+    return limits[userPlan] || limits.free;
+  };
+
+  // Calculate remaining usage
+  const getRemainingUsage = () => {
+    console.log('getRemainingUsage called, usageData:', usageData);
+    
+    if (!usageData) {
+      console.log('No usage data available');
+      return { messages: 0, documents: 0, cases: 0 };
+    }
+    
+    const limits = getUsageLimits();
+    console.log('Current limits:', limits);
+    console.log('Usage data structure:', {
+      messages_used: usageData.messages_used,
+      documents_used: usageData.documents_used,
+      cases_used: usageData.cases_used
     });
-    return;
-  }
+    
+    const remaining = {
+      messages: limits.messages === -1 ? '∞' : Math.max(0, limits.messages - (usageData.messages_used || 0)),
+      documents: limits.documents === -1 ? '∞' : Math.max(0, limits.documents - (usageData.documents_used || 0)),
+      cases: limits.cases === -1 ? '∞' : Math.max(0, limits.cases - (usageData.cases_used || 0))
+    };
+    
+    console.log('Calculated remaining:', remaining);
+    return remaining;
+  };
 
-  if (format === 'txt') {
-    handleDownloadDocument(document);
-  } else {
-    handleDownloadMarkdown(document);
-  }
-};
+  // Format plan name for display
+  const formatPlanName = (plan) => {
+    const planNames = {
+      free: 'Free Plan',
+      pro: 'Pro',
+      pro_plus: 'Pro Plus'
+    };
+    return planNames[plan] || 'Free Trial';
+  };
 
-  // Navigate to upgrade page
-  const handleUpgrade = () => {
-    router.push('/pricing');
+  const handleDownloadClick = (document, format = 'txt') => {
+    if (!canDownload()) {
+      setUpgradeModal({
+        isOpen: true,
+        message: 'Document downloads are not available on the Free plan. Upgrade to Pro to download your documents.',
+        upgradeTo: 'pro'
+      });
+      return;
+    }
+
+    if (format === 'txt') {
+      handleDownloadDocument(document);
+    } else {
+      handleDownloadMarkdown(document);
+    }
   };
 
   const handleDeleteDocument = async (documentId) => {
@@ -388,44 +521,42 @@ const handleDownloadClick = (document, format = 'txt') => {
     }
   };
 
-
   const checkAndSendPendingFeedback = async () => {
-  if (feedbackProcessed.current) {
-    console.log('⚠️ Feedback already processed, skipping...');
-    return;
-  }
-
-  console.log('🔍 Checking for pending feedback at:', new Date().toISOString());
-
-  try {
-    const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
-      credentials: 'include',
-    });
-    
-    const data = await response.json();
-    console.log('📥 Pending feedback API response:', data);
-    
-    if (data.success && data.data) {
-      console.log('✅ Found feedback ID:', data.data.id, 'sent_to_chat:', data.data.sent_to_chat);
-      
-      const feedback = data.data;
-      feedbackProcessed.current = true;
-      
-      const feedbackMessage = buildFeedbackMessage(feedback);
-      console.log('Built feedback message:', feedbackMessage);
-      
-      const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
-      console.log('Messages array prepared:', messagesArray.length, 'messages');
-      
-      await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
-    } else {
-      console.log('No pending feedback found');
+    if (feedbackProcessed.current) {
+      console.log('⚠️ Feedback already processed, skipping...');
+      return;
     }
-  } catch (error) {
-    console.error('Error checking pending feedback:', error);
-  }
-};
 
+    console.log('🔍 Checking for pending feedback at:', new Date().toISOString());
+
+    try {
+      const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
+        credentials: 'include',
+      });
+      
+      const data = await response.json();
+      console.log('📥 Pending feedback API response:', data);
+      
+      if (data.success && data.data) {
+        console.log('✅ Found feedback ID:', data.data.id, 'sent_to_chat:', data.data.sent_to_chat);
+        
+        const feedback = data.data;
+        feedbackProcessed.current = true;
+        
+        const feedbackMessage = buildFeedbackMessage(feedback);
+        console.log('Built feedback message:', feedbackMessage);
+        
+        const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
+        console.log('Messages array prepared:', messagesArray.length, 'messages');
+        
+        await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
+      } else {
+        console.log('No pending feedback found');
+      }
+    } catch (error) {
+      console.error('Error checking pending feedback:', error);
+    }
+  };
 
   const buildFeedbackMessage = (feedback) => {
     const typeLabels = {
@@ -455,9 +586,7 @@ const handleDownloadClick = (document, format = 'txt') => {
     return message;
   };
 
- 
   const buildMessagesWithDocuments = async (feedback, feedbackMessage) => {
-
     const existingMessages = (messages || []).map(msg => ({
       role: msg.role,
       content: msg.content
@@ -508,10 +637,8 @@ const handleDownloadClick = (document, format = 'txt') => {
     ];
   };
 
-
   const sendFeedbackToChat = async (message, feedbackId, messagesArray) => {
     try {
-
       setIsSending(true);
 
       const userMessage = {
@@ -651,7 +778,6 @@ const handleDownloadClick = (document, format = 'txt') => {
         }),
       });
 
-
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API Error:', errorData);
@@ -671,6 +797,9 @@ const handleDownloadClick = (document, format = 'txt') => {
       };
       
       setMessages(prev => [...prev, aiMessage]);
+      
+      // Refresh usage data after sending message
+      fetchUserData(true);
       
     } catch (err) {
       console.error('Error sending message:', err);
@@ -718,7 +847,79 @@ const handleDownloadClick = (document, format = 'txt') => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* Header */}
+      
+      {/* --- Notification Header --- */}
+      {userPlan === 'free' && (
+        <div className="bg-[#FFF9EA] px-4 md:px-6 py-2.5">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            
+            {/* Left Text */}
+            <div className="flex items-center gap-2 text-sm text-gray-800 w-full sm:w-auto justify-center sm:justify-start">
+              <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
+              <span className="font-bold">{formatPlanName(userPlan)}:</span>
+              {isLoadingUsage ? (
+                <span className="text-gray-700">Loading usage...</span>
+              ) : (
+                <>
+                  <span className="text-gray-700">
+                    {getRemainingUsage().messages} messages, {getRemainingUsage().documents} document remaining
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Right Button */}
+            <div className="flex justify-center sm:justify-end w-full sm:w-auto">
+              <Link href="/pricing">
+                <button className="text-amber-600 hover:text-amber-700 font-semibold text-sm cursor-pointer transition-colors">
+                  Upgrade to Pro
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pro Plan Notification */}
+      {userPlan === 'pro' && (
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 px-4 md:px-6 py-2.5 border-b border-orange-100">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-gray-800 w-full sm:w-auto justify-center sm:justify-start">
+              <Zap className="w-4 h-4 text-orange-500 fill-orange-500" />
+              <span className="font-bold">Pro Plan:</span>
+              {isLoadingUsage ? (
+                <span className="text-gray-700">Loading usage...</span>
+              ) : (
+                <span className="text-gray-700">
+                  Unlimited messages • {getRemainingUsage().cases} cases remaining
+                </span>
+              )}
+            </div>
+            <div className="flex justify-center sm:justify-end w-full sm:w-auto">
+              <Link href="/pricing">
+                <button className="text-orange-600 hover:text-orange-700 font-semibold text-sm cursor-pointer transition-colors">
+                  Upgrade to Pro Plus
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pro Plus Plan Notification */}
+      {userPlan === 'pro_plus' && (
+        <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-4 md:px-6 py-2.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+            <span className="font-bold text-white text-sm">Pro Plus Plan:</span>
+            <span className="text-gray-200 text-sm">
+              All features unlocked • Unlimited access
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* --- Main Header --- */}
       <div className="bg-white border-b border-gray-200 px-4 md:px-6 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 md:gap-3">
