@@ -953,10 +953,6 @@ export default function CaseChat() {
                   <span className="text-gray-700">
                     {getRemainingUsage().messages} messages, {getRemainingUsage().documents} document remaining
                   </span>
-                  {/* Debug info - remove after testing */}
-                  <span className="text-xs text-gray-500 ml-2">
-                    (Debug: {usageData ? 'Has Data' : 'No Data'})
-                  </span>
                 </>
               )}
             </div>
