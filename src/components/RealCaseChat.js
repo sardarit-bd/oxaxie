@@ -108,8 +108,7 @@ export default function CaseChat() {
   const handleGenerateDocument = async (documentType) => {
     if (isGenerating) return;
     
-    // Check document limit before generating
-    if (isDocumentLimitReached()) {
+    if (userPlan === 'free' && isDocumentLimitReached()) {
       setUpgradeModal({
         isOpen: true,
         message: 'You have reached your document generation limit for this month. Upgrade to Pro for unlimited document generation.',
@@ -133,17 +132,47 @@ export default function CaseChat() {
 
       const data = await response.json();
       console.log('Generate document response:', data);
+      console.log('Errors object:', data.errors);
+      console.log('Can purchase credits?:', data.errors?.can_purchase_credits);
+      console.log('Upgrade required?:', data.errors?.upgrade_required);
+      console.log('Current plan from API:', data.errors?.current_plan);
 
       if (!response.ok || !data.success) {
+        // Check if it's a credit purchase requirement FIRST
+        // Either explicitly set, OR if user is Pro/Pro Plus and got upgrade_required
+        const shouldShowCreditModal = 
+          data.errors?.can_purchase_credits || 
+          (data.errors?.upgrade_required && 
+           (userPlan === 'pro' || userPlan === 'pro_plus' || 
+            data.errors?.current_plan === 'pro' || 
+            data.errors?.current_plan === 'pro_plus'));
+        
+        if (shouldShowCreditModal) {
+          console.log('✅ Showing CREDIT modal');
+          setCreditModal({
+            isOpen: true,
+            message: data.message || 'You need to purchase credits to continue.',
+            creditOptions: data.errors?.credit_options || [5, 10, 20],
+            availableCredits: data.errors?.credits_available || 0
+          });
+          setIsGenerating(false);
+          return;
+        }
+        
+        // Then check for upgrade requirement (for free users only)
         if (data.errors?.upgrade_required) {
+          console.log('⚠️ Showing UPGRADE modal');
           setUpgradeModal({
             isOpen: true,
             message: data.message,
             upgradeTo: data.errors.upgrade_to || 'pro'
           });
-        } else {
-          toast.error(data.message || 'Failed to generate document.');
+          setIsGenerating(false);
+          return;
         }
+        
+        // Generic error
+        toast.error(data.message || 'Failed to generate document.');
         setIsGenerating(false);
         return;
       }
@@ -373,22 +402,64 @@ export default function CaseChat() {
     }
   }, [isLoadingUsage, usageData, userPlan]);
 
-  const handleDownloadClick = (document, format = 'txt') => {
-    if (!canDownload()) {
-      setUpgradeModal({
-        isOpen: true,
-        message: 'Document downloads are not available on the Free plan. Upgrade to Pro to download your documents.',
-        upgradeTo: 'pro'
-      });
-      return;
+  // const handleDownloadClick = (document, format = 'txt') => {
+  //   if (!canDownload()) {
+  //     setUpgradeModal({
+  //       isOpen: true,
+  //       message: 'Document downloads are not available on the Free plan. Upgrade to Pro to download your documents.',
+  //       upgradeTo: 'pro'
+  //     });
+  //     return;
+  //   }
+
+  //   // if (format === 'txt') {
+  //   //   handleDownloadDocument(document);
+  //   // } else {
+  //   //   handleDownloadMarkdown(document);
+  //   // }
+  // };
+
+  const handleDownloadClick = async (document, format = 'pdf') => {
+  if (!canDownload()) {
+    setUpgradeModal({
+      isOpen: true,
+      message: 'Document downloads are not available on the Free plan. Upgrade to Pro to download your documents.',
+      upgradeTo: 'pro'
+    });
+    return;
+  }
+
+  try {
+    toast.info(`Preparing ${format.toUpperCase()} download...`);
+    
+    const response = await fetch(`/api/documents/${document.id}/download?format=${format}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Download failed');
     }
 
-    if (format === 'txt') {
-      handleDownloadDocument(document);
-    } else {
-      handleDownloadMarkdown(document);
-    }
-  };
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = window.document.createElement('a'); // Changed from 'a' to 'link'
+    link.href = url;
+    link.download = `${document.name.replace(/ /g, '_')}.${format}`;
+    window.document.body.appendChild(link); // Use window.document explicitly
+    link.click();
+    
+    window.URL.revokeObjectURL(url);
+    window.document.body.removeChild(link);
+    
+    toast.success(`${format.toUpperCase()} downloaded successfully!`);
+  } catch (error) {
+    console.error('Download error:', error);
+    toast.error(error.message || 'Failed to download document. Please try again.');
+  }
+};
+
 
   const handleDeleteDocument = async (documentId) => {
     if (!confirm('Are you sure you want to delete this document?')) return;
@@ -408,45 +479,45 @@ export default function CaseChat() {
     }
   };
 
-  const handleDownloadDocument = (document) => {
-    let plainText = document.content;
+  // const handleDownloadDocument = (document) => {
+  //   let plainText = document.content;
     
-    plainText = plainText.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
-    plainText = plainText.replace(/\*\*(.+?)\*\*/g, '$1');
-    plainText = plainText.replace(/\*(.+?)\*/g, '$1');
-    plainText = plainText.replace(/__(.+?)__/g, '$1');
-    plainText = plainText.replace(/_(.+?)_/g, '$1');
-    plainText = plainText.replace(/^#{1,6}\s+(.+)$/gm, '$1');
-    plainText = plainText.replace(/^\s*[-*+]\s+/gm, '• ');
-    plainText = plainText.replace(/^\s*(\d+)\.\s+/gm, '$1. ');
-    plainText = plainText.replace(/^\s*>\s+/gm, '');
-    plainText = plainText.replace(/^[-*_]{3,}$/gm, '');
-    plainText = plainText.replace(/```[\s\S]*?```/g, '');
-    plainText = plainText.replace(/`(.+?)`/g, '$1');
-    plainText = plainText.replace(/\n{3,}/g, '\n\n');
+  //   plainText = plainText.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
+  //   plainText = plainText.replace(/\*\*(.+?)\*\*/g, '$1');
+  //   plainText = plainText.replace(/\*(.+?)\*/g, '$1');
+  //   plainText = plainText.replace(/__(.+?)__/g, '$1');
+  //   plainText = plainText.replace(/_(.+?)_/g, '$1');
+  //   plainText = plainText.replace(/^#{1,6}\s+(.+)$/gm, '$1');
+  //   plainText = plainText.replace(/^\s*[-*+]\s+/gm, '• ');
+  //   plainText = plainText.replace(/^\s*(\d+)\.\s+/gm, '$1. ');
+  //   plainText = plainText.replace(/^\s*>\s+/gm, '');
+  //   plainText = plainText.replace(/^[-*_]{3,}$/gm, '');
+  //   plainText = plainText.replace(/```[\s\S]*?```/g, '');
+  //   plainText = plainText.replace(/`(.+?)`/g, '$1');
+  //   plainText = plainText.replace(/\n{3,}/g, '\n\n');
     
-    const blob = new Blob([plainText], { 
-      type: 'text/plain;charset=utf-8' 
-    });
-    const url = URL.createObjectURL(blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = `${document.name.replace(/ /g, '_')}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  //   const blob = new Blob([plainText], { 
+  //     type: 'text/plain;charset=utf-8' 
+  //   });
+  //   const url = URL.createObjectURL(blob);
+  //   const a = window.document.createElement('a');
+  //   a.href = url;
+  //   a.download = `${document.name.replace(/ /g, '_')}.txt`;
+  //   a.click();
+  //   URL.revokeObjectURL(url);
+  // };
 
-  const handleDownloadMarkdown = (document) => {
-    const blob = new Blob([document.content], { 
-      type: 'text/markdown;charset=utf-8' 
-    });
-    const url = URL.createObjectURL(blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = `${document.name.replace(/ /g, '_')}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // const handleDownloadMarkdown = (document) => {
+  //   const blob = new Blob([document.content], { 
+  //     type: 'text/markdown;charset=utf-8' 
+  //   });
+  //   const url = URL.createObjectURL(blob);
+  //   const a = window.document.createElement('a');
+  //   a.href = url;
+  //   a.download = `${document.name.replace(/ /g, '_')}.md`;
+  //   a.click();
+  //   URL.revokeObjectURL(url);
+  // };
 
   useEffect(() => {
     if (caseId) {
@@ -1228,17 +1299,17 @@ export default function CaseChat() {
                                 {/* Dropdown Menu */}
                                 <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
                                   <button
-                                    onClick={() => handleDownloadClick(doc, 'txt')}
+                                    onClick={() => handleDownloadClick(doc, 'pdf')}
                                     className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 rounded-t-lg transition-colors flex items-center justify-between"
                                   >
-                                    <span>📄 Download as Text (.txt)</span>
+                                    <span>📄 Download as PDF (.pdf)</span>
                                     {!canDownload() && <Lock className="w-3 h-3 text-yellow-600" />}
                                   </button>
                                   <button
-                                    onClick={() => handleDownloadClick(doc, 'md')}
+                                    onClick={() => handleDownloadClick(doc, 'docx')}
                                     className="w-full text-left px-4 py-2 text-xs hover:bg-gray-50 rounded-b-lg transition-colors border-t border-gray-100 flex items-center justify-between"
                                   >
-                                    <span>📝 Download as Markdown (.md)</span>
+                                    <span>📝 Download as Word (.docx)</span>
                                     {!canDownload() && <Lock className="w-3 h-3 text-yellow-600" />}
                                   </button>
                                 </div>
