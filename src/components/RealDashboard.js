@@ -1,8 +1,7 @@
-// components/RealDashboard.js
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, FileText, MessageSquare, Clock, ChevronRight, Loader2, Lock } from 'lucide-react';
+import { Plus, FileText, MessageSquare, Clock, ChevronRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -14,17 +13,9 @@ export default function RealDashboard() {
     const [updatingCaseId, setUpdatingCaseId] = useState(null);
     const router = useRouter();
 
-    // TODO: Connect this to your actual user subscription logic
-    const isFreePlan = true; 
-
     useEffect(() => {
-        // Only fetch cases if not free plan, or handle the 403 in the fetch
-        if (!isFreePlan) {
-            fetchCases();
-        } else {
-            setLoading(false); // Stop loading immediately for free plan
-        }
-    }, [isFreePlan]);
+        fetchCases();
+    }, []);
 
     const fetchCases = async (page = 1) => {
         try {
@@ -79,7 +70,6 @@ export default function RealDashboard() {
 
     const handleNewCase = () => router.push('/new-case');
     const handleCaseClick = (caseId) => router.push(`/case/${caseId}`);
-    const handleUpgrade = () => router.push('/pricing'); // Or your upgrade route
 
     // Helpers
     const formatDate = (dateString) => {
@@ -111,14 +101,6 @@ export default function RealDashboard() {
 
     const truncateText = (text, maxLength = 80) => (!text || text.length <= maxLength) ? text : text.substring(0, maxLength) + '...';
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-[#FBFAF9] px-4 py-8 sm:px-6 lg:px-8 flex items-center justify-center">
-                <Loader2 className="animate-spin text-gray-400" size={32} />
-            </div>
-        );
-    }
-
     return (
         <div className="min-h-screen bg-[#FBFAF9] px-4 py-8 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
@@ -135,102 +117,59 @@ export default function RealDashboard() {
 
                 {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">{error}</div>}
 
-                {isFreePlan ? (
-                    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white">
-                        {/* CTA Overlay */}
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[2px] p-4">
-                            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl border border-gray-100 max-w-sm w-full text-center">
-                                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
-                                    <Lock className="text-gray-400" size={20} />
-                                </div>
-                                <h3 className="text-xl font-serif text-gray-900 mb-2">History Locked</h3>
-                                <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                                    Upgrade to Pro to access your full case history, outcomes, and past legal guidance.
-                                </p>
-                                <button 
-                                    onClick={handleUpgrade}
-                                    className="w-full bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-semibold px-4 py-2.5 rounded-lg shadow-sm transition-all duration-200 cursor-pointer text-sm"
-                                >
-                                    Upgrade to Pro
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Blurred Dummy Content (To simulate history) */}
-                        <div className="opacity-40 pointer-events-none select-none filter blur-[1px]">
-                            {[1, 2, 3].map((i) => (
-                                <div key={i} className="p-5 border-b border-gray-100 last:border-0">
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex flex-wrap items-center gap-2 mb-3">
-                                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Landlord/Tenant</span>
-                                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Resolved</span>
-                                            </div>
-                                            <h3 className="text-lg text-gray-900 mb-4 font-medium">Dispute regarding security deposit return timeframe...</h3>
-                                            <div className="flex justify-between items-start pt-2 border-t border-gray-50">
-                                                <div className="flex flex-col gap-2">
-                                                    <div className="flex items-center gap-1.5 text-sm text-gray-600"><MessageSquare size={15} className="text-gray-400" />San Francisco, CA</div>
-                                                    <div className="flex items-center gap-1.5 text-sm text-gray-600"><Clock size={15} className="text-gray-400" />10/12/2024</div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <ChevronRight size={20} className="text-gray-300 mt-1" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                {/* INLINE LOADING STATE - Shows while fetching data */}
+                {loading ? (
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center">
+                        <Loader2 size={40} className="text-[#FF9500] mx-auto mb-4 animate-spin" />
+                        <p className="text-gray-500 text-sm">Loading your cases...</p>
+                    </div>
+                ) : cases.length === 0 ? (
+                    <div className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-12 md:p-16 text-center">
+                        <FileText size={36} className="text-gray-400 mx-auto mb-4" />
+                        <h2 className="text-2xl font-semibold text-gray-900 mb-3">No cases yet</h2>
+                        <p className="text-gray-600 mb-8">Start by creating a new case to get legal guidance.</p>
+                        <button onClick={handleNewCase} className="bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-semibold px-6 py-2 rounded-lg shadow-sm cursor-pointer">Create First Case</button>
                     </div>
                 ) : (
-                    <>
-                        {cases.length === 0 ? (
-                            <div className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-12 md:p-16 text-center">
-                                <FileText size={36} className="text-gray-400 mx-auto mb-4" />
-                                <h2 className="text-2xl font-semibold text-gray-900 mb-3">No cases yet</h2>
-                                <p className="text-gray-600 mb-8">Start by creating a new case to get legal guidance.</p>
-                                <button onClick={handleNewCase} className="bg-[#FF9500] hover:bg-[#FFA70A] text-gray-900 font-semibold px-6 py-2 rounded-lg shadow-sm cursor-pointer">Create First Case</button>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {cases.map((caseItem) => (
-                                    <div key={caseItem.id} onClick={() => handleCaseClick(caseItem.id)} className="bg-white rounded-xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-md transition-all duration-200 group cursor-pointer">
-                                        <div className="flex items-start gap-4">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex flex-wrap items-center gap-2 mb-3">
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.issue_type)}`}>{formatIssueType(caseItem.issue_type)}</span>
-                                                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(caseItem.status)}`}>{caseItem.status}</span>
-                                                    {caseItem.status === 'active' && (
-                                                        <button onClick={(e) => handleMarkResolved(caseItem.id, e)} disabled={updatingCaseId === caseItem.id} className="px-3 py-1 bg-[#04174A] hover:bg-[#05215e] text-gray-50 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap">
-                                                            {updatingCaseId === caseItem.id ? 'Updating...' : 'Mark Resolved'}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <h3 className="text-lg text-gray-900 mb-4 font-medium break-words line-clamp-2">{truncateText(caseItem.situation_description, 100)}</h3>
-                                                <div className="flex justify-between items-start pt-2 border-t border-gray-50">
-                                                    <div className="flex flex-col gap-2">
-                                                        <div className="flex items-center gap-1.5 text-sm text-gray-600"><MessageSquare size={15} className="text-gray-400" />{caseItem.location_city}, {caseItem.location_state}</div>
-                                                        <div className="flex items-center gap-1.5 text-sm text-gray-600"><Clock size={15} className="text-gray-400" />{formatDate(caseItem.created_at)}</div>
-                                                    </div>
-                                                    <div className="flex flex-col items-end gap-2 pl-2">
-                                                        <a href={`/feedback/${caseItem.id}`} onClick={(e) => e.stopPropagation()} className="text-sm text-gray-600 hover:text-blue-800 font-medium hover:underline">Response Feedback</a>
-                                                        {caseItem.status === 'resolved' && <a href={`/case/${caseItem.id}/outcome`} onClick={(e) => e.stopPropagation()} className="text-sm text-gray-600 hover:text-green-800 font-medium hover:underline">Case Outcome</a>}
-                                                    </div>
-                                                </div>
+                    <div className="space-y-4">
+                        {cases.map((caseItem) => (
+                            <div key={caseItem.id} onClick={() => handleCaseClick(caseItem.id)} className="bg-white rounded-xl border border-gray-200 p-5 hover:border-gray-300 hover:shadow-md transition-all duration-200 group cursor-pointer">
+                                <div className="flex items-start gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.issue_type)}`}>{formatIssueType(caseItem.issue_type)}</span>
+                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(caseItem.status)}`}>{caseItem.status}</span>
+                                            {caseItem.status === 'active' && (
+                                                <button onClick={(e) => handleMarkResolved(caseItem.id, e)} disabled={updatingCaseId === caseItem.id} className="px-3 py-1 bg-[#04174A] hover:bg-[#05215e] text-gray-50 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 cursor-pointer whitespace-nowrap">
+                                                    {updatingCaseId === caseItem.id ? 'Updating...' : 'Mark Resolved'}
+                                                </button>
+                                            )}
+                                        </div>
+                                        <h3 className="text-lg text-gray-900 mb-4 font-medium break-words line-clamp-2">{truncateText(caseItem.situation_description, 100)}</h3>
+                                        <div className="flex justify-between items-start pt-2 border-t border-gray-50">
+                                            <div className="flex flex-col gap-2">
+                                                <div className="flex items-center gap-1.5 text-sm text-gray-600"><MessageSquare size={15} className="text-gray-400" />{caseItem.location_city}, {caseItem.location_state}</div>
+                                                <div className="flex items-center gap-1.5 text-sm text-gray-600"><Clock size={15} className="text-gray-400" />{formatDate(caseItem.created_at)}</div>
                                             </div>
-                                            <ChevronRight size={20} className="text-gray-300 group-hover:text-gray-500 mt-1" />
+                                            <div className="flex flex-col items-end gap-2 pl-2">
+                                                <a href={`/feedback/${caseItem.id}`} onClick={(e) => e.stopPropagation()} className="text-sm text-gray-600 hover:text-blue-800 font-medium hover:underline">Response Feedback</a>
+                                                {caseItem.status === 'resolved' && <a href={`/case/${caseItem.id}/outcome`} onClick={(e) => e.stopPropagation()} className="text-sm text-gray-600 hover:text-green-800 font-medium hover:underline">Case Outcome</a>}
+                                            </div>
                                         </div>
                                     </div>
-                                ))}
+                                    <ChevronRight size={20} className="text-gray-300 group-hover:text-gray-500 mt-1" />
+                                </div>
                             </div>
-                        )}
-                        
-                        {/* Pagination */}
-                        {pagination && (pagination.nextPageUrl || pagination.prevPageUrl) && (
-                            <div className="flex justify-center gap-4 mt-8 pb-8">
-                                {pagination.prevPageUrl && <button onClick={() => fetchCases(pagination.currentPage - 1)} className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm">Previous</button>}
-                                {pagination.nextPageUrl && <button onClick={() => fetchCases(pagination.currentPage + 1)} className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm">Next</button>}
-                            </div>
-                        )}
-                    </>
+                        ))}
+                    </div>
+                )}
+                
+                {/* Pagination */}
+                {pagination && (pagination.nextPageUrl || pagination.prevPageUrl) && (
+                    <div className="flex justify-center gap-4 mt-8 pb-8">
+                        {pagination.prevPageUrl && <button onClick={() => fetchCases(pagination.currentPage - 1)} className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm">Previous</button>}
+                        {pagination.nextPageUrl && <button onClick={() => fetchCases(pagination.currentPage + 1)} className="px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm">Next</button>}
+                    </div>
                 )}
             </div>
         </div>
