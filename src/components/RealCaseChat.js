@@ -402,22 +402,6 @@ export default function CaseChat() {
     }
   }, [isLoadingUsage, usageData, userPlan]);
 
-  // const handleDownloadClick = (document, format = 'txt') => {
-  //   if (!canDownload()) {
-  //     setUpgradeModal({
-  //       isOpen: true,
-  //       message: 'Document downloads are not available on the Free plan. Upgrade to Pro to download your documents.',
-  //       upgradeTo: 'pro'
-  //     });
-  //     return;
-  //   }
-
-  //   // if (format === 'txt') {
-  //   //   handleDownloadDocument(document);
-  //   // } else {
-  //   //   handleDownloadMarkdown(document);
-  //   // }
-  // };
 
   const handleDownloadClick = async (document, format = 'pdf') => {
   if (!canDownload()) {
@@ -444,10 +428,10 @@ export default function CaseChat() {
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
-    const link = window.document.createElement('a'); // Changed from 'a' to 'link'
+    const link = window.document.createElement('a');
     link.href = url;
     link.download = `${document.name.replace(/ /g, '_')}.${format}`;
-    window.document.body.appendChild(link); // Use window.document explicitly
+    window.document.body.appendChild(link);
     link.click();
     
     window.URL.revokeObjectURL(url);
@@ -479,45 +463,6 @@ export default function CaseChat() {
     }
   };
 
-  // const handleDownloadDocument = (document) => {
-  //   let plainText = document.content;
-    
-  //   plainText = plainText.replace(/\*\*\*(.+?)\*\*\*/g, '$1');
-  //   plainText = plainText.replace(/\*\*(.+?)\*\*/g, '$1');
-  //   plainText = plainText.replace(/\*(.+?)\*/g, '$1');
-  //   plainText = plainText.replace(/__(.+?)__/g, '$1');
-  //   plainText = plainText.replace(/_(.+?)_/g, '$1');
-  //   plainText = plainText.replace(/^#{1,6}\s+(.+)$/gm, '$1');
-  //   plainText = plainText.replace(/^\s*[-*+]\s+/gm, '• ');
-  //   plainText = plainText.replace(/^\s*(\d+)\.\s+/gm, '$1. ');
-  //   plainText = plainText.replace(/^\s*>\s+/gm, '');
-  //   plainText = plainText.replace(/^[-*_]{3,}$/gm, '');
-  //   plainText = plainText.replace(/```[\s\S]*?```/g, '');
-  //   plainText = plainText.replace(/`(.+?)`/g, '$1');
-  //   plainText = plainText.replace(/\n{3,}/g, '\n\n');
-    
-  //   const blob = new Blob([plainText], { 
-  //     type: 'text/plain;charset=utf-8' 
-  //   });
-  //   const url = URL.createObjectURL(blob);
-  //   const a = window.document.createElement('a');
-  //   a.href = url;
-  //   a.download = `${document.name.replace(/ /g, '_')}.txt`;
-  //   a.click();
-  //   URL.revokeObjectURL(url);
-  // };
-
-  // const handleDownloadMarkdown = (document) => {
-  //   const blob = new Blob([document.content], { 
-  //     type: 'text/markdown;charset=utf-8' 
-  //   });
-  //   const url = URL.createObjectURL(blob);
-  //   const a = window.document.createElement('a');
-  //   a.href = url;
-  //   a.download = `${document.name.replace(/ /g, '_')}.md`;
-  //   a.click();
-  //   URL.revokeObjectURL(url);
-  // };
 
   useEffect(() => {
     if (caseId) {
@@ -962,14 +907,12 @@ export default function CaseChat() {
         console.log('⚠️ Critical Warning Detected:', warning);
         
         if (warning.type === 'upgrade_needed') {
-          // Show upgrade modal
           setUpgradeModal({
             isOpen: true,
             message: warning.message,
             upgradeTo: warning.upgrade_to
           });
         } else if (warning.type === 'credits_needed') {
-          // ✅ Show CREDIT modal, NOT upgrade modal
           setCreditModal({
             isOpen: true,
             message: warning.message,
@@ -1042,7 +985,7 @@ export default function CaseChat() {
               ) : (
                 <>
                   <span className="text-gray-700">
-                    {getRemainingUsage().messages} messages, {getRemainingUsage().documents} document remaining
+                    {getRemainingUsage().messages} messages, {getRemainingUsage().documents} document per month
                   </span>
                 </>
               )}
