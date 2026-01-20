@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react'; // Added Suspense import
+import React, { useState, useEffect, Suspense } from 'react';
 import { Scale, ArrowLeft, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
