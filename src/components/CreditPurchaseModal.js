@@ -14,9 +14,7 @@ export default function CreditPurchaseModal({ isOpen, onClose, message, creditOp
     setIsProcessing(true);
 
     try {
-      console.log('🛒 Purchasing credits:', amount);
       
-      // Call Next.js API route
       const response = await fetch('/api/credits/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -25,11 +23,9 @@ export default function CreditPurchaseModal({ isOpen, onClose, message, creditOp
       });
 
       const data = await response.json();
-      console.log('📦 Purchase response:', data);
 
       if (data.success && data.data?.checkout_url) {
         // Redirect to Stripe checkout
-        console.log('🔗 Redirecting to Stripe checkout...');
         window.location.href = data.data.checkout_url;
       } else {
         // Show error message
@@ -38,7 +34,6 @@ export default function CreditPurchaseModal({ isOpen, onClose, message, creditOp
         setSelectedAmount(null);
       }
     } catch (error) {
-      console.error('❌ Error purchasing credits:', error);
       alert('Failed to purchase credits. Please try again.');
       setIsProcessing(false);
       setSelectedAmount(null);

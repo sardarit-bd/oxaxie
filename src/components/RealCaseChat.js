@@ -51,15 +51,12 @@ export default function CaseChat() {
 
   useEffect(() => {
     if (caseId && activeTab === 'documents') {
-      console.log('Tab switched to documents, fetching...');
       fetchDocuments();
     }
   }, [caseId, activeTab]);
 
   const fetchDocuments = async () => {
     try {
-      console.log('=== Fetching Documents ===');
-      console.log('Case ID:', caseId);
       
       const response = await fetch(`/api/cases/${caseId}/documents`, {
         credentials: 'include'
@@ -71,13 +68,10 @@ export default function CaseChat() {
       try {
         data = JSON.parse(text);
       } catch (e) {
-        console.error('Failed to parse JSON:', e);
-        console.error('Response was:', text);
         setDocuments([]);
         return;
       }
-      
-      console.log('Parsed data:', data);
+
       
       if (response.ok && data.success) {
         let docs = [];
@@ -90,17 +84,13 @@ export default function CaseChat() {
           docs = data.data;
         }
         
-        console.log('Extracted documents:', docs);
-        console.log('Document count:', docs.length);
-        
         setDocuments(docs);
       } else {
-        console.error('Failed to fetch documents:', data);
+
         setDocuments([]);
       }
     } catch (error) {
-      console.error('Error fetching documents:', error);
-      console.error('Error stack:', error.stack);
+
       setDocuments([]);
     }
   };
@@ -131,11 +121,6 @@ export default function CaseChat() {
       });
 
       const data = await response.json();
-      console.log('Generate document response:', data);
-      console.log('Errors object:', data.errors);
-      console.log('Can purchase credits?:', data.errors?.can_purchase_credits);
-      console.log('Upgrade required?:', data.errors?.upgrade_required);
-      console.log('Current plan from API:', data.errors?.current_plan);
 
       if (!response.ok || !data.success) {
         // Check if it's a credit purchase requirement FIRST
@@ -148,7 +133,6 @@ export default function CaseChat() {
             data.errors?.current_plan === 'pro_plus'));
         
         if (shouldShowCreditModal) {
-          console.log('✅ Showing CREDIT modal');
           setCreditModal({
             isOpen: true,
             message: data.message || 'You need to purchase credits to continue.',
@@ -207,17 +191,13 @@ export default function CaseChat() {
       if (isRefresh) {
         setIsRefreshingUsage(true);
       }
-      
-      console.log('=== Fetching User Data ===');
+
       const response = await fetch('/api/auth/me', {
         method: 'GET',
         credentials: 'include',
       });
 
-      console.log('Auth response status:', response.status);
-
       if (!response.ok) {
-        console.log('Response not OK');
         setUserPlan('free');
         setIsLoadingPlan(false);
         setIsLoadingUsage(false);
@@ -225,30 +205,25 @@ export default function CaseChat() {
       }
 
       const data = await response.json();
-      console.log('Auth response data:', data);
 
       const userData = data.user?.data || data.data;
-      console.log('Extracted user data:', userData);
+    
       
       if (data.success && userData) {
         // Set plan
         const plan = userData.subscription?.plan_tier || 'free';
-        console.log('User plan:', plan);
+
         setUserPlan(plan);
         
         // Set usage data
         if (userData.usage) {
-          console.log('User usage data:', userData.usage);
-          console.log('Messages used:', userData.usage.messages_used);
-          console.log('Documents used:', userData.usage.documents_used);
-          console.log('Cases used:', userData.usage.cases_used);
           setUsageData(userData.usage);
         } else {
           console.log('No usage data in response');
         }
       }
     } catch (error) {
-      console.error('Error fetching user data:', error);
+
       setUserPlan('free');
     } finally {
       setIsLoadingPlan(false);
@@ -271,7 +246,6 @@ export default function CaseChat() {
         setUserPlan(data.data?.plan || 'free');
       }
     } catch (error) {
-      console.error('Error fetching user plan:', error);
       setUserPlan('free');
     } finally {
       setIsLoadingPlan(false);
@@ -280,29 +254,27 @@ export default function CaseChat() {
 
   const fetchUsageData = async () => {
     try {
-      console.log('=== Fetching Usage Data ===');
       const response = await fetch('/api/usage/summary', {
         credentials: 'include'
       });
       
-      console.log('Usage API response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Usage API full response:', data);
+        
         
         if (data.success) {
           // Handle different possible data structures
           const usageInfo = data.data || data;
-          console.log('Extracted usage info:', usageInfo);
+          
           setUsageData(usageInfo);
         } else {
-          console.error('Usage API returned success: false');
+
         }
       } else {
-        console.error('Usage API failed with status:', response.status);
+  
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+     
       }
     } catch (error) {
       console.error('Error fetching usage data:', error);
@@ -328,20 +300,13 @@ export default function CaseChat() {
 
   // Calculate remaining usage
   const getRemainingUsage = () => {
-    console.log('getRemainingUsage called, usageData:', usageData);
     
     if (!usageData) {
-      console.log('No usage data available');
+
       return { messages: 0, documents: 0, cases: 0 };
     }
     
     const limits = getUsageLimits();
-    console.log('Current limits:', limits);
-    console.log('Usage data structure:', {
-      messages_used: usageData.messages_used,
-      documents_used: usageData.documents_used,
-      cases_used: usageData.cases_used
-    });
     
     const remaining = {
       messages: limits.messages === -1 ? '∞' : Math.max(0, limits.messages - (usageData.messages_used || 0)),
@@ -349,7 +314,6 @@ export default function CaseChat() {
       cases: limits.cases === -1 ? '∞' : Math.max(0, limits.cases - (usageData.cases_used || 0))
     };
     
-    console.log('Calculated remaining:', remaining);
     return remaining;
   };
 
@@ -439,7 +403,6 @@ export default function CaseChat() {
     
     toast.success(`${format.toUpperCase()} downloaded successfully!`);
   } catch (error) {
-    console.error('Download error:', error);
     toast.error(error.message || 'Failed to download document. Please try again.');
   }
 };
@@ -459,7 +422,6 @@ export default function CaseChat() {
         toast.success('Document deleted successfully!');
       }
     } catch (error) {
-      console.error('Error deleting document:', error);
     }
   };
 
@@ -480,21 +442,15 @@ export default function CaseChat() {
 
   const fetchCaseDocuments = async () => {
     try {
-      console.log('=== Fetching Case Documents ===');
-      console.log('Case ID:', caseId);
       
       const response = await fetch(`/api/case/${caseId}/case-documents`, {
         credentials: 'include'
       });
       
-      console.log('Response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('Case documents response:', data);
         
         if (data.success && data.data) {
-          console.log('Case documents found:', data.data.length);
           setCaseDocuments(data.data);
         } else {
           console.log('No case documents in response');
@@ -533,8 +489,6 @@ export default function CaseChat() {
           credentials: 'include',
         });
 
-        console.log('Proxy response status:', messagesResponse.status);
-
         if (messagesResponse.ok) {
           const messagesData = await messagesResponse.json();
           
@@ -571,13 +525,11 @@ export default function CaseChat() {
           }
         } else {
           const errorData = await messagesResponse.json();
-          console.error('Failed to fetch messages:', errorData);
         }
       } catch (msgError) {
         console.error('Message fetch error:', msgError);
       }
  
-      console.log('Showing initial message');
       setMessages([{
         role: 'assistant',
         content: generateInitialMessage(data),
@@ -587,7 +539,7 @@ export default function CaseChat() {
       checkAndSendPendingFeedback();
       
     } catch (err) {
-      console.error('Error fetching case:', err);
+
       setError(err.message);
     } finally {
       setLoading(false);
@@ -596,11 +548,10 @@ export default function CaseChat() {
 
   const checkAndSendPendingFeedback = async () => {
     if (feedbackProcessed.current) {
-      console.log('⚠️ Feedback already processed, skipping...');
+
       return;
     }
 
-    console.log('🔍 Checking for pending feedback at:', new Date().toISOString());
 
     try {
       const response = await fetch(`/api/feedback/cases/${caseId}/pending-feedback`, {
@@ -608,26 +559,25 @@ export default function CaseChat() {
       });
       
       const data = await response.json();
-      console.log('📥 Pending feedback API response:', data);
+
       
       if (data.success && data.data) {
-        console.log('✅ Found feedback ID:', data.data.id, 'sent_to_chat:', data.data.sent_to_chat);
+    
         
         const feedback = data.data;
         feedbackProcessed.current = true;
         
         const feedbackMessage = buildFeedbackMessage(feedback);
-        console.log('Built feedback message:', feedbackMessage);
+  
         
         const messagesArray = await buildMessagesWithDocuments(feedback, feedbackMessage);
-        console.log('Messages array prepared:', messagesArray.length, 'messages');
         
         await sendFeedbackToChat(feedbackMessage, feedback.id, messagesArray);
       } else {
-        console.log('No pending feedback found');
+
       }
     } catch (error) {
-      console.error('Error checking pending feedback:', error);
+
     }
   };
 
@@ -665,7 +615,6 @@ export default function CaseChat() {
       content: msg.content
     }));
 
-    console.log('Building messages array, existing count:', existingMessages.length);
 
     if (feedback.documents && feedback.documents.length > 0) {
       const contentArray = [
@@ -674,13 +623,13 @@ export default function CaseChat() {
 
       for (const doc of feedback.documents) {
         try {
-          console.log('Fetching document:', doc.id);
+       
           const docResponse = await fetch(`/api/case/document/${doc.id}/content`, {
             credentials: 'include',
           });
           
           const docData = await docResponse.json();
-          console.log('Document data received:', docData.success);
+      
           
           if (docData.success && docData.data.base64) {
             contentArray.push({
@@ -691,10 +640,8 @@ export default function CaseChat() {
                 data: docData.data.base64
               }
             });
-            console.log('Added document to content array');
           }
         } catch (error) {
-          console.error('Error loading document:', error);
         }
       }
 
@@ -738,9 +685,8 @@ export default function CaseChat() {
         }),
       });
 
-      console.log('Chat API response status:', response.status);
       const data = await response.json();
-      console.log('Chat API response data:', data);
+      
       
       if (data.success) {
         const aiMessage = {
@@ -750,9 +696,9 @@ export default function CaseChat() {
         };
         
         setMessages(prev => [...prev, aiMessage]);
-        console.log('Feedback successfully sent to chat and AI responded');
+   
       } else {
-        console.error('Failed to send feedback to chat:', data);
+      
         const errorMessage = {
           role: 'assistant',
           content: 'I apologize, but I encountered an error processing your feedback. Please try again.',
@@ -762,7 +708,7 @@ export default function CaseChat() {
         setMessages(prev => [...prev, errorMessage]);
       }
     } catch (error) {
-      console.error('Error sending feedback to chat:', error);
+  
       const errorMessage = {
         role: 'assistant',
         content: 'I apologize, but I encountered an error processing your feedback. Please try again.',
@@ -864,7 +810,7 @@ export default function CaseChat() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API Error:', errorData);
+     
         
         if (errorData.errors?.upgrade_required) {
           if (errorData.errors.can_purchase_credits) {
@@ -889,7 +835,6 @@ export default function CaseChat() {
       }
 
       const data = await response.json();
-      console.log('API Response:', data); 
       
       const aiContent = data.data?.ai_message?.content || data.message || 'No response received';
       const aiTimestamp = data.data?.ai_message?.created_at || new Date().toISOString();
@@ -904,7 +849,6 @@ export default function CaseChat() {
       
       if (data.data?.critical_warning) {
         const warning = data.data.critical_warning;
-        console.log('⚠️ Critical Warning Detected:', warning);
         
         if (warning.type === 'upgrade_needed') {
           setUpgradeModal({
@@ -926,7 +870,7 @@ export default function CaseChat() {
       fetchUserData(true);
       
     } catch (err) {
-      console.error('Error sending message:', err);
+ 
       
       const errorMessage = {
         role: 'assistant',

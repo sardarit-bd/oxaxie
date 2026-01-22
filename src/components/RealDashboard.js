@@ -40,7 +40,6 @@ export default function RealDashboard() {
                 });
             }
         } catch (err) {
-            console.error('Error fetching cases:', err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -61,7 +60,7 @@ export default function RealDashboard() {
             toast.success('Case marked as resolved!');
             setCases(prevCases => prevCases.map(c => c.id === caseId ? { ...c, status: 'resolved' } : c));
         } catch (err) {
-            console.error(err);
+           
             alert(err.message);
         } finally {
             setUpdatingCaseId(null);

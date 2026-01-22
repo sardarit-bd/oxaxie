@@ -139,7 +139,6 @@ const CaseForm = () => {
 
       const data = await response.json();
 
-      console.log('Full API response:', data);
 
       if (!response.ok) {
 
@@ -165,14 +164,9 @@ const CaseForm = () => {
       if (data.success) {
         const caseId = data.data?.case?.id;
         
-        console.log('Case created successfully:', {
-          caseId: caseId,
-          fullCase: data.data?.case,
-          uploadInfo: data.data?.upload_info
-        });
 
         if (!caseId) {
-          console.error('Case ID missing from response:', data);
+         
           throw new Error('Case created but ID not found in response');
         }
 
@@ -180,14 +174,12 @@ const CaseForm = () => {
           console.warn('Some files failed to upload:', data.data.upload_info.errors);
         }
 
-        console.log(`Redirecting to /case/${caseId}`);
         router.push(`/case/${caseId}`);
       } else {
         throw new Error(data.message || 'Failed to create case');
       }
       
     } catch (err) {
-      console.error('Error creating case:', err);
       setError(err.message || 'Failed to create case. Please try again.');
     } finally {
       setLoading(false);

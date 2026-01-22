@@ -62,7 +62,6 @@ export default function CaseOutcomeForm() {
       const result = await response.json();
       setCaseData(result.data || result);
     } catch (err) {
-      console.error('Error fetching case:', err);
       setError('Failed to load case data');
     }
   };
@@ -80,62 +79,6 @@ export default function CaseOutcomeForm() {
   };
 
   const isFormValid = formData.outcome_type && formData.outcome_summary && formData.date_resolved;
-
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   setLoading(true);
-  //   setError('');
-
-  //   try {
-  //     // Calculate days to resolution
-  //     const caseCreatedDate = new Date(caseData.created_at);
-  //     const resolvedDate = new Date(formData.date_resolved);
-  //     const daysToResolution = Math.floor((resolvedDate - caseCreatedDate) / (1000 * 60 * 60 * 24));
-
-  //     const payload = {
-  //       all_case_id: caseId,
-  //       outcome_type: formData.outcome_type,
-  //       outcome_summary: formData.outcome_summary,
-  //       money_saved: formData.money_saved || null,
-  //       money_recovered: formData.money_recovered || null,
-  //       court_avoided: formData.court_avoided ?? false,
-  //       hired_attorney: formData.hired_attorney ?? false,
-  //       ai_helpfulness_rating: formData.ai_helpfulness_rating,
-  //       feedback_text: formData.feedback_text || null,
-  //       would_recommend: formData.would_recommend,
-  //       testimonial_consent: formData.testimonial_consent,
-  //       days_to_resolution: daysToResolution >= 0 ? daysToResolution : null
-  //     };
-
-  //     console.log('Submitting outcome:', payload);
-
-  //     const response = await fetch(`/api/case/${caseId}/outcome`, {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //       },
-  //       credentials: 'include',
-  //       body: JSON.stringify(payload),
-  //     });
-
-  //     const data = await response.json();
-  //     console.log('Submission response:', data);
-
-  //     if (!response.ok) {
-  //       throw new Error(data.message || 'Failed to submit outcome');
-  //     }
-
-  //     if (data.success) {
-  //       toast.success('Case outcome submitted successfully!');
-  //       router.push('/dashboard');
-  //     }
-  //   } catch (err) {
-  //     console.error('Error submitting outcome:', err);
-  //     setError(err.message || 'Failed to submit outcome. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -163,8 +106,6 @@ export default function CaseOutcomeForm() {
         days_to_resolution: daysToResolution >= 0 ? daysToResolution : null
       };
 
-      console.log('Submitting outcome:', payload);
-
       const response = await fetch(`/api/case/${caseId}/outcome`, {
         method: 'POST',
         headers: {
@@ -175,7 +116,6 @@ export default function CaseOutcomeForm() {
       });
 
       const data = await response.json();
-      console.log('Submission response:', data);
 
       if (!response.ok) {
         if (response.status === 409) {
@@ -197,7 +137,6 @@ export default function CaseOutcomeForm() {
         router.push('/dashboard');
       }
     } catch (err) {
-      console.error('Error submitting outcome:', err);
       setError(err.message || 'Failed to submit outcome. Please try again.');
     } finally {
       setLoading(false);

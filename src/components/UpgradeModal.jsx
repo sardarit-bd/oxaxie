@@ -96,16 +96,16 @@ const UpgradeModal = ({ isOpen, onClose, currentPlan, upgradeTo, message }) => {
     return planMap[plan.toLowerCase()] || plan.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  // ✅ NEW: Clean up backend messages
+ 
   const sanitizeMessage = (rawMessage) => {
     if (!rawMessage) return `You've reached your ${formatPlanName(currentPlan)} plan limit.`;
 
     // Remove technical jargon and dollar signs
     let cleanMessage = rawMessage
-      .replace(/\$\d+(\.\d{2})?/g, '') // Remove dollar amounts like $0.50
-      .replace(/threshold/gi, 'limit') // Replace "threshold" with "limit"
-      .replace(/cost/gi, 'usage') // Replace "cost" with "usage"
-      .replace(/exceeded/gi, 'reached') // Replace "exceeded" with "reached"
+      .replace(/\$\d+(\.\d{2})?/g, '')
+      .replace(/threshold/gi, 'limit')
+      .replace(/cost/gi, 'usage')
+      .replace(/exceeded/gi, 'reached')
       .trim();
 
     // If message mentions "monthly limit" or similar, keep it simple

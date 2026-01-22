@@ -64,7 +64,6 @@ export default function Profile() {
         toast.error(data.message || 'Failed to downgrade plan');
       }
     } catch (error) {
-      console.error('Downgrade error:', error);
       toast.error('An error occurred while downgrading');
     } finally {
       setIsDowngrading(false);
@@ -79,29 +78,22 @@ export default function Profile() {
           credentials: 'include',
         });
 
-        console.log('Auth response status:', response.status, response.ok);
-
         if (!response.ok) {
-          console.log('Response not OK, redirecting to login');
           router.push('/login?redirect=/profile');
           return;
         }
 
         const data = await response.json();
-        console.log('Auth response data:', data);
 
         const userData = data.user?.data || data.data;
         
         if (data.success && userData) {
-          console.log('Setting user data:', userData);
           setUser(userData);
           setIsAuthenticated(true);
         } else {
-          console.log('Data validation failed, redirecting to login. Success:', data.success, 'Has userData:', !!userData);
           router.push('/login?redirect=/profile');
         }
       } catch (error) {
-        console.error('Auth check failed:', error);
         router.push('/login?redirect=/profile');
       } finally {
         setLoading(false);
