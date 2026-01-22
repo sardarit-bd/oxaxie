@@ -10,7 +10,7 @@ export default function PricingPage() {
   const router = useRouter();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false); // New state for button clicks
+  const [processingPlanId, setProcessingPlanId] = useState(null);
 
   const plans = [
     {
@@ -82,7 +82,7 @@ export default function PricingPage() {
     }
 
     // Start loading state
-    setIsProcessing(true);
+    setProcessingPlanId(plan.id);
 
     try {
       // Check auth status ONLY when trying to buy
@@ -105,7 +105,7 @@ export default function PricingPage() {
       console.error('Error checking auth:', error);
       // Handle network errors (optional: show toast notification)
     } finally {
-      setIsProcessing(false);
+      setProcessingPlanId(null);
     }
   };
 
@@ -190,10 +190,10 @@ export default function PricingPage() {
 
               <button
                 onClick={() => handlePlanSelect(plan)}
-                disabled={isProcessing}
+                disabled={processingPlanId === plan.id}
                 className={`w-full ${plan.buttonStyle} font-semibold py-3 rounded-xl transition-colors mt-auto cursor-pointer flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed`}
               >
-                {isProcessing ? (
+                {processingPlanId === plan.id ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                     Processing...
